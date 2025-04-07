@@ -25,8 +25,7 @@ import { IoSearch } from "react-icons/io5";
 
 
 // Set the base URL for Axios
-axios.defaults.baseURL = "http://localhost:8001";
-
+axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL || "http://localhost:8001";
 // Base Element class for common functionality
 class Element {
   constructor(setElements) {
