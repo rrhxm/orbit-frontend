@@ -8,7 +8,6 @@ import "./assets/SmartSearch.css";
 import { IoSearch } from "react-icons/io5";
 import { LuOrbit } from "react-icons/lu";
 
-
 const SmartSearch = ({
     elements,
     onNavigate,
@@ -135,64 +134,62 @@ const SmartSearch = ({
 
     return (
         <div className="search-overlay" onClick={onClose}>
-            
+            <div className="smart-search-section" onClick={(e) => e.stopPropagation()}>
+                <div className="search-bar">
+                    <IoSearch alt="Search" className="search-icon" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search"
+                        className="search-input"
+                    />
+                    <button className="smart-search-button" onClick={handleSmartSearch}>
+                        <LuOrbit />
+                    </button>
+                </div>
 
-        <div className="smart-search-section" onClick={(e) => e.stopPropagation()}>
-            <div className="search-bar">
-                <IoSearch alt="Search" className="search-icon" />
-                <input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search"
-                    className="search-input"
-                />
-                <button className="smart-search-button" onClick={handleSmartSearch}>
-                <LuOrbit />
-                </button>
-            </div>
-
-            <div className="search-results">
-                {isLoading ? (
-                    <div className="loading">Loading...</div>
-                ) : errorMessage ? (
-                    <div className="error-message">{errorMessage}</div>
-                ) : searchQuery.trim() === "" ? (
-                    <div className="empty-search">
-                        <p>Nothing yet</p>
-                    </div>
-                ) : (
-                    <div className="search-results-content">
-                        {smartSearchResult && (
-                            <div className="smart-search-answer">
-                                <p>{smartSearchResult.answer}</p>
-                            </div>
-                        )}
-                        <div className="search-results-list">
-                            {smartSearchResult ? (
-                                smartSearchResult.elements.length > 0 ? (
-                                    smartSearchResult.elements.map((el) => (
+                <div className="search-results">
+                    {isLoading ? (
+                        <div className="loading">Loading...</div>
+                    ) : errorMessage ? (
+                        <div className="error-message">{errorMessage}</div>
+                    ) : searchQuery.trim() === "" ? (
+                        <div className="empty-search">
+                            <p>Nothing yet</p>
+                        </div>
+                    ) : (
+                        <div className="search-results-content">
+                            {smartSearchResult && (
+                                <div className="smart-search-answer">
+                                    <p>{smartSearchResult.answer}</p>
+                                </div>
+                            )}
+                            <div className="search-results-list">
+                                {smartSearchResult ? (
+                                    smartSearchResult.elements.length > 0 ? (
+                                        smartSearchResult.elements.map((el) => (
+                                            <div key={el._id}>{renderElement(el)}</div>
+                                        ))
+                                    ) : (
+                                        <div className="no-result">
+                                            <p>No related elements found.</p>
+                                        </div>
+                                    )
+                                ) : normalSearchResults.length > 0 ? (
+                                    normalSearchResults.map((el) => (
                                         <div key={el._id}>{renderElement(el)}</div>
                                     ))
                                 ) : (
                                     <div className="no-result">
-                                        <p>No related elements found.</p>
+                                        <p>No results found.</p>
                                     </div>
-                                )
-                            ) : normalSearchResults.length > 0 ? (
-                                normalSearchResults.map((el) => (
-                                    <div key={el._id}>{renderElement(el)}</div>
-                                ))
-                            ) : (
-                                <div className="no-result">
-                                    <p>No results found.</p>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
-                    </div>
-                )}
+                    )}
+                </div>
             </div>
-        </div>
         </div>
     );
 };
