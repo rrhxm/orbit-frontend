@@ -35,7 +35,7 @@ export default function Auth() {
     <div className="login-screen">
       <div className="grained" width="100%" height="100%"></div>
 
-      <img src="./toolbar-logo.svg" alt="Orbit Logo" className="login-logo" />
+      <img src="./login-logo.svg" alt="Orbit Logo" className="login-logo" />
       <div className="login-tab">
         <h2 className="login-head">Sign In</h2>
         <button className="google-signin" onClick={signInWithGoogle}>
