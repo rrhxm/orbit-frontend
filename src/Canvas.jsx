@@ -25,7 +25,7 @@ import { IoSearch } from "react-icons/io5";
 
 
 // Set the base URL for Axios
-axios.defaults.baseURL = import.meta.env.VITE_BACKEND_URL || "https://orbit-backend-6wcr.onrender.com";
+axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com";
 // Base Element class for common functionality
 class Element {
   constructor(setElements) {
