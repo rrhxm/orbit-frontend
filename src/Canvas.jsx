@@ -25,7 +25,7 @@ import { IoSearch } from "react-icons/io5";
 
 
 // Set the base URL for Axios
-axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com";
+axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com", "http://localhost:8001/";
 // Base Element class for common functionality
 class Element {
   constructor(setElements) {
@@ -39,10 +39,14 @@ class Element {
         element.type === "note"
           ? "/notes/"
           : element.type === "task"
-          ? "/tasks/"
-          : element.type === "image"
-          ? "/images/"
-          : "/audios/";
+            ? "/tasks/"
+            : element.type === "image"
+              ? "/images/"
+              : element.type === "audio"
+                ? "/audios/"
+                : element.type === "scribble"
+                  ? "/scribbles/"  // New endpoint for scribble
+                  : "/elements/";  // Fallback (though this should be exhaustive)
       const response = await axios.post(endpoint, element, {
         params: { user_id: userId },
       });
@@ -201,12 +205,14 @@ const Canvas = () => {
         const elementType = draggingElement.toLowerCase().includes("note")
           ? "note"
           : draggingElement.toLowerCase().includes("task")
-          ? "task"
-          : draggingElement.toLowerCase().includes("image")
-          ? "image"
-          : draggingElement.toLowerCase().includes("audio")
-          ? "audio"
-          : draggingElement.toLowerCase();
+            ? "task"
+            : draggingElement.toLowerCase().includes("image")
+              ? "image"
+              : draggingElement.toLowerCase().includes("audio")
+                ? "audio"
+                : draggingElement.toLowerCase().includes("scribble")
+                  ? "scribble"  // Add scribble type detection
+                  : draggingElement.toLowerCase();
         const formattedDate = formatCurrentDate();
         const newElement = {
           type: elementType,
@@ -216,10 +222,12 @@ const Canvas = () => {
             elementType === "task"
               ? ""
               : elementType === "image"
-              ? `Image ${formattedDate}`
-              : elementType === "audio"
-              ? `Audio ${formattedDate}`
-              : `Note ${formattedDate}`,
+                ? `Image ${formattedDate}`
+                : elementType === "audio"
+                  ? `Audio ${formattedDate}`
+                  : elementType === "scribble"
+                    ? `Scribble ${formattedDate}`  // Custom title for scribble
+                    : `Note ${formattedDate}`,
           content: elementType === "note" ? "" : undefined,
           due_date: elementType === "task" ? "" : undefined,
           due_time: elementType === "task" ? "" : undefined,
@@ -228,6 +236,7 @@ const Canvas = () => {
           completed: elementType === "task" ? false : undefined,
           last_reset: elementType === "task" ? new Date().toISOString().split("T")[0] : undefined,
           is_edited: elementType === "task" ? false : undefined,
+          scribbleData: elementType === "scribble" ? null : undefined,  // Initialize scribbleData for scribble
         };
         await elementHandler.saveElement(newElement, user.uid, showNotification);
       }
@@ -401,7 +410,7 @@ const Canvas = () => {
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Drawing")}
+                onDragStart={() => setDraggingElement("Scribble")}
                 className="menu-item"
               >
                 <MdDraw className="menu-icon" />
@@ -527,6 +536,25 @@ const Canvas = () => {
             } else if (el.type === "audio") {
               return (
                 <Audio
+                  key={el._id}
+                  element={el}
+                  isEditing={editingElement && editingElement._id === el._id}
+                  onDoubleClick={handleDoubleClick}
+                  onDragStart={(event) => handleDragStart(event, el._id)}
+                  onDragEnd={(event) => handleDragEnd(event, el._id)}
+                  updateElement={(id, updatedData) =>
+                    elementHandler.updateElement(id, updatedData, user.uid)
+                  }
+                  deleteElement={(id) =>
+                    elementHandler.deleteElement(id, user.uid, showNotification)
+                  }
+                  onClose={() => setEditingElement(null)}
+                  userId={user.uid}
+                />
+              );
+            } else if (el.type === "scribble") {
+              return (
+                <Scribble
                   key={el._id}
                   element={el}
                   isEditing={editingElement && editingElement._id === el._id}

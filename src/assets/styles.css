@@ -40,7 +40,7 @@ body {
     scroll-behavior: smooth;
     scrollbar-width: none;
     background-image: radial-gradient(rgba(255, 255, 255, 0.305) 1px,
-    transparent 1px);
+            transparent 1px);
     background-color: #000000;
     background-size: 20px 20px;
 }
@@ -69,7 +69,7 @@ body {
 /* Left section */
 .toolbar-left {
     display: flex;
-    padding-left:5px;
+    padding-left: 5px;
     align-items: center;
     flex-grow: 1;
     /* Prevents unnecessary stretching */
@@ -253,7 +253,7 @@ body {
     font-size: 12px;
     display: flex;
     align-items: center;
-    color:#ffffff70;
+    color: #ffffff70;
     justify-content: center;
     cursor: url("/cursor.cur"), auto;
 }
@@ -350,7 +350,6 @@ body {
     line-height: normal;
     display: -webkit-box;
     -webkit-box-orient: vertical;
-
 }
 
 .note-overlay {
@@ -414,7 +413,7 @@ body {
     padding-top: 12px;
     padding-left: 25px;
     padding-right: 25px;
-    resize:none;
+    resize: none;
     font-family: Lexend;
     outline: none;
     display: block;
@@ -423,7 +422,6 @@ body {
     scroll-behavior: smooth;
     overflow-y: auto;
 }
-
 
 /* Tasks */
 .task-box {
@@ -438,8 +436,8 @@ body {
     color: #0b0b0b;
     display: flex;
     overflow: hidden;
-
 }
+
 .task-placeholder {
     display: flex;
     font-weight: bold;
@@ -456,11 +454,13 @@ body {
     border-radius: 20px;
     position: absolute;
 }
+
 .task-placeholder-icon {
     font-size: 30px;
     color: #000000;
     font-weight: bold;
 }
+
 .task-meta {
     display: flex;
     gap: 3px;
@@ -470,19 +470,24 @@ body {
     position: absolute;
     font-size: 20px;
 }
+
 .priority-low {
     color: #07aa1d;
 }
+
 .priority-medium {
     color: yellow;
 }
+
 .priority-high {
     color: red;
 }
+
 .repeat-icon {
     font-size: 20px;
     color: #000000;
 }
+
 .task-title {
     font-weight: bold;
     font-size: 25px;
@@ -494,14 +499,15 @@ body {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+
 .task-due-date {
     font-size: 13px;
     color: #000000b2;
     position: absolute;
     padding-top: 32px;
     padding-left: 11px;
-
 }
+
 .task-completion {
     display: flex;
     /* position: absolute; */
@@ -509,10 +515,13 @@ body {
     padding-left: 165px;
     padding-bottom: 5px;
 }
-.complete-icon, .completed-icon {
+
+.complete-icon,
+.completed-icon {
     font-size: 25px;
     color: #07aa1d;
 }
+
 .completed-icon {
     color: #07aa1d;
 }
@@ -560,11 +569,13 @@ body {
     border-width: 0px;
     overflow: hidden;
 }
+
 .task-separator {
     width: 500px;
     height: 2px;
     background-color: #424242;
 }
+
 .task-option {
     display: flex;
     align-items: center;
@@ -905,7 +916,7 @@ body {
 }
 
 .audio-player-expanded {
-    display:flex;
+    display: flex;
     align-items: center;
     gap: 10px;
     margin-top: 35px;
@@ -933,24 +944,31 @@ body {
     border-radius: 50px;
     padding: 2px;
 }
+
 .audio-seek-bar-expanded::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
     width: 15px;
     height: 15px;
-    background: rgb(34, 34, 34); /* Blue dot */
+    background: rgb(34, 34, 34);
+    /* Blue dot */
     border-radius: 50px;
 }
 
 .audio-seek-bar-expanded::-moz-range-thumb {
     width: 15px;
     height: 15px;
-    background: rgb(159, 0, 0); /* Blue dot */
+    background: rgb(159, 0, 0);
+    /* Blue dot */
     border-radius: 50px;
 }
 
 .audio-seek-bar-expanded::-webkit-slider-runnable-track {
-    background: linear-gradient(to right, #00f 0%, #00f var(--value), #ccc var(--value), #ccc 100%);
+    background: linear-gradient(to right,
+            #00f 0%,
+            #00f var(--value),
+            #ccc var(--value),
+            #ccc 100%);
 }
 
 .audio-seek-bar-expanded::-moz-range-progress {
@@ -962,7 +980,6 @@ body {
     transform: translateY(-5px);
     color: #525252;
     font-family: Lexend;
-
 }
 
 /* Delete and close icons */
@@ -1204,7 +1221,7 @@ body {
     font-size: small;
     border-radius: 60px;
     outline: none;
-    border:none
+    border: none;
 }
 
 .user-cred {
@@ -1326,4 +1343,46 @@ service cloud.firestore {
         opacity: 0;
         transform: translateX(-50%) translateY(10px);
     }
+}
+
+.scribble-closed {
+    width: 100px;
+    height: 100px;
+    border: 1px solid #ccc;
+    position: absolute;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-repeat: no-repeat;
+    cursor: move;
+}
+
+.scribble-title {
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.7);
+    padding: 2px 5px;
+}
+
+.scribble-expanded {
+    position: absolute;
+    background: #fff;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+
+.scribble-title-input {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+.scribble-tools {
+    margin-top: 10px;
+}
+
+.scribble-tools button {
+    margin-right: 5px;
 }
