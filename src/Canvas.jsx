@@ -7,6 +7,7 @@ import Note from "./elements/Note";
 import Task from "./elements/Task";
 import Image from "./elements/Image";
 import Audio from "./elements/Audio";
+import Scribble from "./elements/Scribble";
 import SmartSearch from "./SmartSearch";
 import "./assets/SmartSearch.css";
 
@@ -119,7 +120,7 @@ const Canvas = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [canvasWidth, setCanvasWidth] = useState(window.innerWidth * 2);
   const [dragOffset, setDragOffset] = useState({ offsetX: 0, offsetY: 0 });
-  const [isSearchVisible, setIsSearchVisible] = useState(false); // Add isSearchVisible state
+  const [isSearchVisible, setIsSearchVisible] = useState(false);
 
   // Notification handler
   const showNotification = (message, type, Icon) => {

@@ -3,7 +3,7 @@ import axios from "axios";
 import { MdEdit } from "react-icons/md";
 import { FaSun, FaMoon } from "react-icons/fa";
 import { SketchPicker } from "react-color";
-import "./assets/styles.css";
+// import "./assets/styles.css";
 
 const Scribble = ({
     element,
