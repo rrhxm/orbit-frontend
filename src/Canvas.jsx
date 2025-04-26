@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import "./assets/styles.css";
 import Spacemap from "./Spacemap";
 import axios from "axios";
@@ -13,24 +13,55 @@ import "./assets/SmartSearch.css";
 
 // Icon imports
 import { TbNotes } from "react-icons/tb";
-import { IoIosImage } from "react-icons/io";
 import { FaEarthAsia } from "react-icons/fa6";
 import { FaLink } from "react-icons/fa";
 import { PiVideoFill } from "react-icons/pi";
+import { MdAddPhotoAlternate } from "react-icons/md";
 import { MdDraw } from "react-icons/md";
-import { LuAudioLines } from "react-icons/lu";
+import { FaMicrophone } from "react-icons/fa";
 import { TiWarning } from "react-icons/ti";
 import { FaCircleCheck } from "react-icons/fa6";
-import { FaTasks } from "react-icons/fa";
+import { MdOutlineAddTask } from "react-icons/md";
 import { IoSearch } from "react-icons/io5";
 
-
 // Set the base URL for Axios
-axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com", "http://localhost:8001/";
+axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com";
+
 // Base Element class for common functionality
 class Element {
   constructor(setElements) {
     this.setElements = setElements;
+  }
+
+  // Detect changes between original and updated element
+  detectChanges(original, updated) {
+    if (!original || !updated) return true;
+
+    // For images and audio, check all relevant fields including data
+    if (original.type === "image" || original.type === "audio") {
+      return (
+        updated.x !== undefined ||
+        updated.y !== undefined ||
+        updated.image_data !== undefined ||
+        updated.audio_data !== undefined ||
+        updated.title !== undefined
+      );
+    }
+
+    // For editable elements (note, task, scribble), check relevant fields
+    const editableFields = {
+      note: ["title", "content", "x", "y"],
+      task: ["title", "content", "due_date", "due_time", "priority", "repeat", "completed", "last_reset", "is_edited", "x", "y"],
+      scribble: ["title", "scribbleData", "x", "y"],
+    };
+
+    const fieldsToCheck = editableFields[original.type] || [];
+    for (let field of fieldsToCheck) {
+      if (updated[field] !== undefined && updated[field] !== original[field]) {
+        return true;
+      }
+    }
+    return false;
   }
 
   // Save a new element
@@ -46,22 +77,25 @@ class Element {
               : element.type === "audio"
                 ? "/audios/"
                 : element.type === "scribble"
-                  ? "/scribbles/"  // New endpoint for scribble
-                  : "/elements/";  // Fallback (though this should be exhaustive)
+                  ? "/scribbles/"
+                  : "/elements/";
+      console.log("Saving element:", element, "to endpoint:", endpoint);
       const response = await axios.post(endpoint, element, {
         params: { user_id: userId },
       });
-      this.setElements((prevElements) => [
-        ...prevElements,
-        { ...response.data, _id: response.data._id },
-      ]);
+      console.log("Response from backend:", response.data);
+      this.setElements((prevElements) => {
+        const newElements = [...prevElements, { ...response.data, _id: response.data._id }];
+        console.log("Updated elements state:", newElements);
+        return newElements;
+      });
       showNotification(
         `${element.type} added successfully`,
         "notif-success",
         <FaCircleCheck />
       );
     } catch (error) {
-      console.error(`Error saving ${element.type}:`, error);
+      console.error(`Error saving ${element.type}:`, error.response?.data || error.message);
       showNotification(
         error.response?.data?.detail || `Failed to add ${element.type}`,
         "notif-error",
@@ -70,9 +104,15 @@ class Element {
     }
   }
 
-  // Update an existing element (no notification)
-  async updateElement(id, updatedData, userId) {
+  // Update an existing element (only if changes are detected)
+  async updateElement(id, updatedData, userId, originalElement, onUpdate) {
     try {
+      const hasChanges = this.detectChanges(originalElement, updatedData);
+      if (!hasChanges) {
+        console.log(`No changes detected for element ${id}, skipping update`);
+        return;
+      }
+
       if (updatedData.x !== undefined) updatedData.x = Math.round(updatedData.x);
       if (updatedData.y !== undefined) updatedData.y = Math.round(updatedData.y);
       await axios.put(`/elements/${id}`, updatedData, {
@@ -81,6 +121,9 @@ class Element {
       this.setElements((prevElements) =>
         prevElements.map((el) => (el._id === id ? { ...el, ...updatedData } : el))
       );
+      if (onUpdate) {
+        onUpdate({ ...originalElement, ...updatedData });
+      }
     } catch (error) {
       console.error("Error updating element:", error);
       throw error;
@@ -121,6 +164,9 @@ const Canvas = () => {
   const [canvasWidth, setCanvasWidth] = useState(window.innerWidth * 2);
   const [dragOffset, setDragOffset] = useState({ offsetX: 0, offsetY: 0 });
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const elementCache = useRef(new Map());
 
   // Notification handler
   const showNotification = (message, type, Icon) => {
@@ -140,24 +186,39 @@ const Canvas = () => {
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
   };
 
-  // Load elements for the user
-  const loadElements = async () => {
-    if (!user) return;
+  // Load elements with pagination
+  const loadElements = useCallback(async () => {
+    if (!user || !hasMore) return;
     try {
       const userId = user.uid;
+      const cacheKey = `${userId}-page-${page}`;
+      if (elementCache.current.has(cacheKey)) {
+        console.log("Loading elements from cache:", cacheKey);
+        setElements((prev) => [...prev, ...elementCache.current.get(cacheKey)]);
+        return;
+      }
+
       const response = await axios.get("/elements/", {
-        params: { user_id: userId },
+        params: { user_id: userId, page: page, per_page: 10 },
       });
       if (!Array.isArray(response.data)) {
         throw new Error("Unexpected response format: elements is not an array");
       }
-      setElements(response.data);
+      if (response.data.length === 0) {
+        setHasMore(false);
+        return;
+      }
+      elementCache.current.set(cacheKey, response.data);
+      setElements((prev) => {
+        const existingIds = new Set(prev.map((el) => el._id));
+        const newElements = response.data.filter((el) => !existingIds.has(el._id));
+        return [...prev, ...newElements];
+      });
     } catch (error) {
       console.error("Error loading elements:", error);
-      setElements([]);
       showNotification("Failed to load elements", "notif-error", <TiWarning />);
     }
-  };
+  }, [user, page, hasMore]);
 
   // Handle drag start for elements
   const handleDragStart = (event, elementId) => {
@@ -170,30 +231,47 @@ const Canvas = () => {
   };
 
   // Handle drag end for elements
-  const handleDragEnd = async (event, elementId) => {
-    event.preventDefault();
-    const rect = canvasRef.current.getBoundingClientRect();
-    const newX = event.clientX - rect.left - dragOffset.offsetX;
-    const newY = event.clientY - rect.top - dragOffset.offsetY;
+  const handleDragEnd = useCallback(
+    async (event, elementId) => {
+      event.preventDefault();
+      const rect = canvasRef.current.getBoundingClientRect();
+      const newX = Math.round(event.clientX - rect.left - dragOffset.offsetX);
+      const newY = Math.round(event.clientY - rect.top - dragOffset.offsetY);
 
-    const screenWidth = window.innerWidth;
-    const expansionThreshold = 100;
+      const screenWidth = window.innerWidth;
+      const expansionThreshold = 100;
 
-    if (newX + expansionThreshold > canvasWidth - expansionThreshold) {
-      setCanvasWidth((prevWidth) => prevWidth + screenWidth);
-      requestAnimationFrame(() => {
-        document.querySelector(".canvas-container").scrollLeft += screenWidth / 2;
-      });
-    }
-    await elementHandler.updateElement(elementId, { x: newX, y: newY }, user.uid);
-  };
+      if (newX + expansionThreshold > canvasWidth - expansionThreshold) {
+        setCanvasWidth((prevWidth) => prevWidth + screenWidth);
+        requestAnimationFrame(() => {
+          document.querySelector(".canvas-container").scrollLeft += screenWidth / 2;
+        });
+      }
+
+      setElements((prev) =>
+        prev.map((el) =>
+          el._id === elementId ? { ...el, x: newX, y: newY } : el
+        )
+      );
+
+      try {
+        const original = elements.find((el) => el._id === elementId);
+        await elementHandler.updateElement(elementId, { x: newX, y: newY }, user.uid, original, null);
+      } catch (error) {
+        console.error("Error updating element position:", error);
+        const original = elements.find((el) => el._id === elementId);
+        if (original) setElements((prev) => prev.map((el) => (el._id === elementId ? original : el)));
+      }
+    },
+    [canvasWidth, dragOffset, user.uid, elements]
+  );
 
   // Handle drop for new elements
   const handleDrop = async (event) => {
     event.preventDefault();
     const rect = canvasRef.current.getBoundingClientRect();
-    const newX = event.clientX - rect.left - dragOffset.offsetX;
-    const newY = event.clientY - rect.top - dragOffset.offsetY;
+    const newX = Math.round(event.clientX - rect.left - dragOffset.offsetX);
+    const newY = Math.round(event.clientY - rect.top - dragOffset.offsetY);
     if (!Array.isArray(elements)) {
       console.error("Error: elements is not an array", elements);
       return;
@@ -201,7 +279,7 @@ const Canvas = () => {
     if (draggingElement) {
       const existingElement = elements.find((el) => el._id === draggingElement);
       if (existingElement) {
-        await elementHandler.updateElement(draggingElement, { x: newX, y: newY }, user.uid);
+        await elementHandler.updateElement(draggingElement, { x: newX, y: newY }, user.uid, existingElement, null);
       } else {
         const elementType = draggingElement.toLowerCase().includes("note")
           ? "note"
@@ -212,7 +290,7 @@ const Canvas = () => {
               : draggingElement.toLowerCase().includes("audio")
                 ? "audio"
                 : draggingElement.toLowerCase().includes("scribble")
-                  ? "scribble"  // Add scribble type detection
+                  ? "scribble"
                   : draggingElement.toLowerCase();
         const formattedDate = formatCurrentDate();
         const newElement = {
@@ -227,18 +305,21 @@ const Canvas = () => {
                 : elementType === "audio"
                   ? `Audio ${formattedDate}`
                   : elementType === "scribble"
-                    ? `Scribble ${formattedDate}`  // Custom title for scribble
+                    ? `Scribble ${formattedDate}`
                     : `Note ${formattedDate}`,
-          content: elementType === "note" ? "" : undefined,
-          due_date: elementType === "task" ? "" : undefined,
-          due_time: elementType === "task" ? "" : undefined,
-          priority: elementType === "task" ? "low" : undefined,
-          repeat: elementType === "task" ? "no" : undefined,
-          completed: elementType === "task" ? false : undefined,
-          last_reset: elementType === "task" ? new Date().toISOString().split("T")[0] : undefined,
-          is_edited: elementType === "task" ? false : undefined,
-          scribbleData: elementType === "scribble" ? null : undefined,  // Initialize scribbleData for scribble
         };
+        // Only add fields if they have meaningful values
+        if (elementType === "note") newElement.content = "";
+        if (elementType === "task") {
+          newElement.due_date = "";
+          newElement.due_time = "";
+          newElement.priority = "low";
+          newElement.repeat = "no";
+          newElement.completed = false;
+          newElement.last_reset = new Date().toISOString().split("T")[0];
+          newElement.is_edited = false;
+        }
+        if (elementType === "scribble") newElement.scribbleData = null;
         await elementHandler.saveElement(newElement, user.uid, showNotification);
       }
       setDraggingElement(null);
@@ -246,18 +327,18 @@ const Canvas = () => {
   };
 
   // Handle double-click to edit an element
-  const handleDoubleClick = (element) => {
+  const handleDoubleClick = useCallback((element) => {
     setEditingElement(element);
-  };
+  }, []);
 
   // Navigate to an element's location on the canvas
-  const handleNavigate = (x, y) => {
+  const handleNavigate = useCallback((x, y) => {
     document.getElementById("canvas").scrollTo({
-      left: x - window.innerWidth / 2, // Center the element horizontally
-      top: y - window.innerHeight / 2, // Center the element vertically
+      left: x - window.innerWidth / 2,
+      top: y - window.innerHeight / 2,
       behavior: "smooth",
     });
-  };
+  }, []);
 
   useEffect(() => {
     const canvasContainer = document.querySelector(".canvas-container");
@@ -306,9 +387,29 @@ const Canvas = () => {
 
   useEffect(() => {
     if (user) {
-      loadElements();
+      setElements([]);
+      setPage(1);
+      setHasMore(true);
+      elementCache.current.clear();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadElements();
+      const handleScroll = () => {
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const nearBottom = canvas.scrollTop + canvas.clientHeight >= canvas.scrollHeight - 50;
+          if (nearBottom && hasMore) {
+            setPage((prev) => prev + 1);
+          }
+        }
+      };
+      canvasRef.current?.addEventListener("scroll", handleScroll);
+      return () => canvasRef.current?.removeEventListener("scroll", handleScroll);
+    }
+  }, [user, loadElements, hasMore, page]);
 
   useEffect(() => {
     const handleOffline = () =>
@@ -353,6 +454,12 @@ const Canvas = () => {
     hour12: true,
   })} ${currentTime.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
 
+  const handleUpdate = (updatedElement) => {
+    setElements((prevElements) =>
+      prevElements.map((el) => (el._id === updatedElement._id ? updatedElement : el))
+    );
+  };
+
   return (
     <div className="canvas-container">
       {/* Floating Toolbar */}
@@ -383,49 +490,49 @@ const Canvas = () => {
             <div className="add-dropdown-menu">
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Text Note")}
+                onDragStart={(event) => handleDragStart(event, "Text Note")}
                 className="menu-item"
               >
                 <TbNotes className="menu-icon" />
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Image")}
+                onDragStart={(event) => handleDragStart(event, "Image")}
                 className="menu-item"
               >
-                <IoIosImage className="menu-icon" />
+                <MdAddPhotoAlternate className="menu-icon" />
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Task")}
+                onDragStart={(event) => handleDragStart(event, "Task")}
                 className="menu-item"
               >
-                <FaTasks className="menu-icon" />
+                <MdOutlineAddTask className="menu-icon" />
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Audio")}
+                onDragStart={(event) => handleDragStart(event, "Audio")}
                 className="menu-item"
               >
-                <LuAudioLines className="menu-icon" />
+                <FaMicrophone className="menu-icon" />
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Scribble")}
+                onDragStart={(event) => handleDragStart(event, "Scribble")}
                 className="menu-item"
               >
                 <MdDraw className="menu-icon" />
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Browser")}
+                onDragStart={(event) => handleDragStart(event, "Browser")}
                 className="menu-item"
               >
                 <FaEarthAsia className="menu-icon" />
               </div>
               <div
                 draggable
-                onDragStart={() => setDraggingElement("Link")}
+                onDragStart={(event) => handleDragStart(event, "Link")}
                 className="menu-item"
               >
                 <FaLink className="menu-icon" />
@@ -445,7 +552,7 @@ const Canvas = () => {
           {/* Search Button */}
           <div
             className="search-tab"
-            onClick={() => setIsSearchVisible(true)} // Now this should work
+            onClick={() => setIsSearchVisible(true)}
           >
             <IoSearch alt="Search" className="search-tab-icon" />
             Search
@@ -456,13 +563,7 @@ const Canvas = () => {
           elements={elements}
           canvasWidth={3000}
           canvasHeight={2000}
-          onNavigate={(canvasX, canvasY) => {
-            document.getElementById("canvas").scrollTo({
-              left: canvasX,
-              top: canvasY,
-              behavior: "smooth",
-            });
-          }}
+          onNavigate={handleNavigate}
         />
       </div>
 
@@ -487,7 +588,7 @@ const Canvas = () => {
                   onDragStart={(event) => handleDragStart(event, el._id)}
                   onDragEnd={(event) => handleDragEnd(event, el._id)}
                   updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid)
+                    elementHandler.updateElement(id, updatedData, user.uid, el, null)
                   }
                   deleteElement={(id) =>
                     elementHandler.deleteElement(id, user.uid, showNotification)
@@ -506,7 +607,7 @@ const Canvas = () => {
                   onDragStart={(event) => handleDragStart(event, el._id)}
                   onDragEnd={(event) => handleDragEnd(event, el._id)}
                   updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid)
+                    elementHandler.updateElement(id, updatedData, user.uid, el, null)
                   }
                   deleteElement={(id) =>
                     elementHandler.deleteElement(id, user.uid, showNotification)
@@ -525,12 +626,13 @@ const Canvas = () => {
                   onDragStart={(event) => handleDragStart(event, el._id)}
                   onDragEnd={(event) => handleDragEnd(event, el._id)}
                   updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid)
+                    elementHandler.updateElement(id, updatedData, user.uid, el, handleUpdate)
                   }
                   deleteElement={(id) =>
                     elementHandler.deleteElement(id, user.uid, showNotification)
                   }
                   onClose={() => setEditingElement(null)}
+                  onUpdate={handleUpdate}
                   userId={user.uid}
                 />
               );
@@ -544,12 +646,13 @@ const Canvas = () => {
                   onDragStart={(event) => handleDragStart(event, el._id)}
                   onDragEnd={(event) => handleDragEnd(event, el._id)}
                   updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid)
+                    elementHandler.updateElement(id, updatedData, user.uid, el, handleUpdate)
                   }
                   deleteElement={(id) =>
                     elementHandler.deleteElement(id, user.uid, showNotification)
                   }
                   onClose={() => setEditingElement(null)}
+                  onUpdate={handleUpdate}
                   userId={user.uid}
                 />
               );
@@ -558,12 +661,12 @@ const Canvas = () => {
                 <Scribble
                   key={el._id}
                   element={el}
-                  isEditing={editingElement && editingElement._id === el._id}
-                  onDoubleClick={handleDoubleClick}
+                  isEditing={editingElement && String(editingElement._id) === String(el._id)}
+                  onDoubleClick={() => handleDoubleClick(el)}
                   onDragStart={(event) => handleDragStart(event, el._id)}
                   onDragEnd={(event) => handleDragEnd(event, el._id)}
                   updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid)
+                    elementHandler.updateElement(id, updatedData, user.uid, el, null)
                   }
                   deleteElement={(id) =>
                     elementHandler.deleteElement(id, user.uid, showNotification)
@@ -609,7 +712,7 @@ const Canvas = () => {
           onNavigate={handleNavigate}
           onDoubleClick={handleDoubleClick}
           updateElement={(id, updatedData) =>
-            elementHandler.updateElement(id, updatedData, user.uid)
+            elementHandler.updateElement(id, updatedData, user.uid, elements.find((el) => el._id === id), null)
           }
           deleteElement={(id) =>
             elementHandler.deleteElement(id, user.uid, showNotification)
