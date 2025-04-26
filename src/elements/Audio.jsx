@@ -5,13 +5,16 @@ import { IoMicCircle } from "react-icons/io5";
 import { FaCirclePlay, FaCirclePause, FaMicrophone } from "react-icons/fa6";
 import { BsFillPlayCircleFill } from "react-icons/bs";
 import { BsFillPauseCircleFill } from "react-icons/bs";
+import axios from "axios";
 
 class Audio extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            audioData: props.element.audio_data || null, // Base64-encoded audio data
+            audioData: props.element.audio_data || null,
             audioTitle: props.element.title || `Audio ${new Date().toLocaleDateString()}`,
+            transcription: props.element.transcription || null,
+            isTranscribing: false,
             deleteMenuOpen: false,
             isRecording: false,
             mediaRecorder: null,
@@ -19,16 +22,17 @@ class Audio extends React.Component {
             isPlaying: false,
             currentTime: 0,
             duration: 0,
+            isNew: !props.element.audio_data && !props.element.title,
         };
         this.audioRef = React.createRef();
-        this.maxDuration = 30 * 60 * 1000; // 30 minutes in milliseconds
+        this.maxDuration = 30 * 60 * 1000;
     }
 
     componentDidMount() {
         if (this.audioRef.current) {
             this.audioRef.current.addEventListener("timeupdate", this.updateTime);
             this.audioRef.current.addEventListener("loadedmetadata", this.setDuration);
-            this.audioRef.current.addEventListener("ended", this.handleAudioEnded); // Add ended event listener
+            this.audioRef.current.addEventListener("ended", this.handleAudioEnded);
         }
     }
 
@@ -55,13 +59,13 @@ class Audio extends React.Component {
             if (!isNaN(duration) && duration !== Infinity) {
                 this.setState({ duration });
             } else {
-                this.setState({ duration: 0 }); // Fallback if duration is invalid
+                this.setState({ duration: 0 });
             }
         }
     };
 
     handleAudioEnded = () => {
-        this.setState({ isPlaying: false, currentTime: 0 }); // Reset to play icon and seek to start
+        this.setState({ isPlaying: false, currentTime: 0 });
     };
 
     handleDoubleClick = () => {
@@ -86,6 +90,10 @@ class Audio extends React.Component {
                         audioData: reader.result,
                         audioChunks: [],
                         isRecording: false,
+                    }, () => {
+                        if (this.state.isNew) {
+                            this.handleSave();
+                        }
                     });
                     stream.getTracks().forEach((track) => track.stop());
                 };
@@ -95,7 +103,6 @@ class Audio extends React.Component {
             mediaRecorder.start();
             this.setState({ mediaRecorder, audioChunks, isRecording: true });
 
-            // Stop recording after 30 minutes
             setTimeout(() => {
                 if (mediaRecorder.state === "recording") {
                     mediaRecorder.stop();
@@ -132,11 +139,67 @@ class Audio extends React.Component {
         }
     };
 
+    handleTranscribe = async () => {
+        this.setState({ isTranscribing: true });
+        try {
+            const response = await axios.post(
+                `/transcribe/${this.props.element._id}`,
+                {},
+                { params: { user_id: this.props.userId } }
+            );
+            const transcription = response.data.transcription;
+            this.setState({
+                transcription: transcription,
+                isTranscribing: false,
+            });
+            // Update parent state to reflect the transcription
+            if (this.props.onUpdate) {
+                this.props.onUpdate({
+                    ...this.props.element,
+                    transcription: transcription,
+                });
+            }
+            // Optionally, update the element in the database (already handled by backend)
+            await this.props.updateElement(this.props.element._id, {
+                transcription: transcription,
+            });
+        } catch (error) {
+            console.error("Error transcribing audio:", error.response?.data || error.message);
+            this.setState({ isTranscribing: false });
+            alert(
+                error.response?.data?.detail ||
+                "Failed to transcribe audio. Please try again."
+            );
+        }
+    };
+
     formatTime = (seconds) => {
         if (isNaN(seconds) || seconds === Infinity) return "0:00";
         const minutes = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${minutes}:${secs < 10 ? "0" : ""}${secs}`;
+    };
+
+    handleSave = async () => {
+        const updates = {};
+        const finalTitle = this.state.audioTitle.trim() === "" ? "Untitled Audio" : this.state.audioTitle;
+        if (this.state.audioData && (!this.props.element.audio_data || this.state.audioData !== this.props.element.audio_data)) {
+            updates.audio_data = this.state.audioData;
+        }
+        if (finalTitle !== this.props.element.title) {
+            updates.title = finalTitle;
+        }
+        if (Object.keys(updates).length > 0) {
+            try {
+                await this.props.updateElement(this.props.element._id, updates);
+                if (this.props.onUpdate) {
+                    this.props.onUpdate({ ...this.props.element, ...updates });
+                }
+                this.setState({ isNew: false });
+            } catch (error) {
+                console.error("Failed to save audio:", error);
+            }
+        }
     };
 
     renderClosed() {
@@ -156,7 +219,7 @@ class Audio extends React.Component {
                             {this.state.isPlaying ? <BsFillPauseCircleFill /> : <BsFillPlayCircleFill />}
                         </div>
                         <audio ref={this.audioRef} src={element.audio_data} style={{ display: "none" }} />
-                        <span className="audio-title">{element.title}</span>
+                        <span className="audio-title">{this.state.audioTitle}</span>
                     </div>
                 ) : (
                     <div className="audio-placeholder">
@@ -170,7 +233,7 @@ class Audio extends React.Component {
 
     renderOpened() {
         const { element, onClose } = this.props;
-        const { audioData, audioTitle, deleteMenuOpen, isRecording, isPlaying, currentTime, duration } = this.state;
+        const { audioData, audioTitle, transcription, isTranscribing, deleteMenuOpen, isRecording, isPlaying, currentTime, duration } = this.state;
 
         return (
             <div className="audio-overlay">
@@ -188,7 +251,7 @@ class Audio extends React.Component {
                     {audioData ? (
                         <div className="audio-player-expanded">
                             <div onClick={this.togglePlayPause} className="play-pause-button-expanded">
-                                {this.state.isPlaying ? <FaCirclePause /> : <FaCirclePlay />}
+                                {isPlaying ? <FaCirclePause /> : <FaCirclePlay />}
                             </div>
                             <input
                                 type="range"
@@ -211,52 +274,69 @@ class Audio extends React.Component {
                         </div>
                     )}
 
-                    <div className="actions">
-                        <BiCollapseAlt
-                            className="close-icon"
-                            onClick={async () => {
-                                const finalTitle = audioTitle.trim() === "" ? "Untitled Audio" : audioTitle;
-                                if (audioData) {
-                                    await this.props.updateElement(element._id, {
-                                        title: finalTitle,
-                                        audio_data: audioData,
-                                    });
-                                }
-                                onClose();
-                                this.setState({ deleteMenuOpen: false });
-                            }}
-                        />
-                        <div className="Delete">
-                            <FaTrashCan
-                                className="delete-icon"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    this.setState({ deleteMenuOpen: true });
+                    <div className="transcription-section">
+                        {transcription ? (
+                            <>
+                                <h4>Transcription</h4>
+                                <div className="transcription-text">{transcription}</div>
+                            </>
+                        ) : isTranscribing ? (
+                            <div className="shimmer">
+                                <div className="shimmer-line"></div>
+                                <div className="shimmer-line"></div>
+                                <div className="shimmer-line"></div>
+                            </div>
+                        ) : audioData ? (
+                            <button
+                                onClick={this.handleTranscribe}
+                                disabled={isTranscribing}
+                                className={isTranscribing ? "transcribe-button disabled" : "transcribe-button"}
+                            >
+                                {isTranscribing ? "Transcribing..." : "Transcribe Audio"}
+                            </button>
+                        ) : null}
+
+                        <div className="actions">
+                            <BiCollapseAlt
+                                className="close-icon"
+                                onClick={async () => {
+                                    await this.handleSave();
+                                    onClose();
+                                    this.setState({ deleteMenuOpen: false });
                                 }}
                             />
-                            {deleteMenuOpen && (
-                                <div className="delete-confirmation" onClick={(e) => e.stopPropagation()}>
-                                    <div className="confirm">
-                                        <p>Are you sure you want to delete this item permanently?</p>
+                            <div className="Delete">
+                                <FaTrashCan
+                                    className="delete-icon"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        this.setState({ deleteMenuOpen: true });
+                                    }}
+                                />
+                                {deleteMenuOpen && (
+                                    <div className="delete-confirmation" onClick={(e) => e.stopPropagation()}>
+                                        <div className="confirm">
+                                            <p>Are you sure you want to delete this item permanently?</p>
+                                        </div>
+                                        <div
+                                            className="cancel"
+                                            onClick={() => this.setState({ deleteMenuOpen: false })}
+                                        >
+                                            Cancel
+                                        </div>
+                                        <div
+                                            className="delete-permanently"
+                                            onClick={async () => {
+                                                await this.props.deleteElement(element._id);
+                                                onClose();
+                                                this.setState({ deleteMenuOpen: false });
+                                            }}
+                                        >
+                                            Delete
+                                        </div>
                                     </div>
-                                    <div
-                                        className="cancel"
-                                        onClick={() => this.setState({ deleteMenuOpen: false })}
-                                    >
-                                        Cancel
-                                    </div>
-                                    <div
-                                        className="delete-permanently"
-                                        onClick={async () => {
-                                            await this.props.deleteElement(element._id);
-                                            onClose();
-                                            this.setState({ deleteMenuOpen: false });
-                                        }}
-                                    >
-                                        Delete
-                                    </div>
-                                </div>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>

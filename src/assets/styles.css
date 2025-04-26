@@ -146,34 +146,34 @@ body {
 .add-dropdown-menu {
     position: absolute;
     top: 50px;
-    width: 170px;
-    height: 90px;
-    transform: translateX(10%);
-    justify-content: center;
-    align-items: center;
+    width: 330px;
+    height: 60px;
+    transform: translateX(-10%);
     grid-template-columns: repeat(4, 1fr);
     z-index: 7000;
-    display: grid;
-    gap: 2px;
-    padding: 10px;
-    background: #0b0b0b;
+    display: flex;
+    gap: 10px;
+    /* padding: 10px; */
+    background: #161616;
     backdrop-filter: blur(6px);
     border-radius: 15px;
-    box-shadow: 0px 2px 10px rgba(89, 89, 89, 0.215);
-    border: 1px solid rgba(255, 255, 255, 0.144);
+    box-shadow: 0px 2px 10px rgba(0, 0, 0, 0.515);
+    border: 2px solid rgba(255, 255, 255, 0.144);
     user-select: none;
+    justify-content: center;
+    align-items: center;
 }
 
 /* Menu items inside dropdown */
 .menu-item {
     display: flex;
-    width: 29px;
-    height: 29px;
+    width: 35px;
+    height: 35px;
     align-items: center;
     justify-content: center;
     cursor: url("/cursor.cur"), auto;
     background-color: #5d5d5d50;
-    font-size: 15px;
+    font-size: 20px;
     color: rgb(255, 255, 255);
     border-radius: 8px;
 }
@@ -639,6 +639,7 @@ body {
 
 .image-title {
     font-size: 14px;
+    width: 150px;
     position: absolute;
     font-weight: bold;
     bottom: 5px;
@@ -648,6 +649,9 @@ body {
     color: #ffffff;
     padding-left: 5px;
     padding-right: 5px;
+    outline: none;
+    display: block;
+    overflow: hidden;
     text-shadow: 2px 2px 5px rgb(0, 0, 0);
 }
 
@@ -982,6 +986,77 @@ body {
     font-family: Lexend;
 }
 
+.Transcript-button {
+    background-color: #2d2d2d;
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    display: flex;
+    width: 60px;
+    height: 30px;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    border-radius: 50px;
+    z-index: 3600;
+    user-select: none;
+}
+
+.audio-overlay .expanded-audio .transcribe-button:hover {
+    background: #0056b3;
+}
+
+.audio-overlay .expanded-audio .transcription-section {
+    margin-top: 16px;
+}
+
+.audio-overlay .expanded-audio .transcription-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    color: #888;
+}
+
+.audio-overlay .expanded-audio .transcription-section .transcription-text {
+    background: #222;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 14px;
+    color: #ccc;
+    white-space: pre-wrap;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.audio-overlay .expanded-audio .shimmer {
+    margin-top: 16px;
+}
+
+.audio-overlay .expanded-audio .shimmer .shimmer-line {
+    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    height: 12px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.audio-overlay .expanded-audio .shimmer .shimmer-line:nth-child(2) {
+    width: 80%;
+}
+
+.audio-overlay .expanded-audio .shimmer .shimmer-line:nth-child(3) {
+    width: 60%;
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
 /* Delete and close icons */
 .actions {
     background-color: #2d2d2d;
@@ -1127,7 +1202,7 @@ body {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #0b0b0b;
+    background: rgb(0, 0, 0);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1346,43 +1421,121 @@ service cloud.firestore {
 }
 
 .scribble-closed {
-    width: 100px;
-    height: 100px;
-    border: 1px solid #ccc;
     position: absolute;
+    width: 200px;
+    height: 200px;
+    border-radius: 25px;
+    cursor: url("/cursor.cur"), auto;
+    background: rgba(58, 58, 58, 0.6);
+    box-shadow: 0px 2px 9px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(6px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid rgba(255, 255, 255, 0.435);
+    overflow: hidden;
+}
+
+.scribble-placeholder-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    background-repeat: no-repeat;
-    cursor: move;
+    width: 100px;
+    height: 100px;
 }
 
 .scribble-title {
-    position: absolute;
-    bottom: 5px;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    background: rgba(255, 255, 255, 0.7);
-    padding: 2px 5px;
+    width: 550px;
+    overflow: hidden;
+    font-size: 25px;
+    font-weight: bold;
+    padding-top: 10px;
+    text-align: center;
+    color: #333333;
+    cursor: url("/cursor.cur"), auto;
+}
+
+.scribble-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(7px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3500;
+    isolation: isolate;
 }
 
 .scribble-expanded {
     position: absolute;
-    background: #fff;
-    padding: 10px;
-    border: 1px solid #ccc;
+    gap: 10px;
+    background: #11111190;
+    /* padding: 20px; */
+    border-radius: 30px;
+    width: 550px;
+    height: 550px;
+    color: rgb(255, 255, 255);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid rgb(66, 66, 66);
+    isolation: isolate;
+    cursor: url("/cursor.cur"), auto;
 }
 
 .scribble-title-input {
-    width: 100%;
-    margin-bottom: 10px;
+    width: 450px;
+    height: 85px;
+    scrollbar-width: none;
+    background-color: #504e4e00;
+    text-align: left;
+    color: white;
+    font-size: 30px;
+    font-family: Lexend;
+    display: block;
+    padding-left: 25px;
+    padding-right: 25px;
+    outline: none;
+    border-width: 0px;
+    overflow: hidden;
+}
+
+.scribble-canvas {
+    border: 1px solid #de1717;
+    border-radius: 4px;
+    touch-action: none;
+    width: 550px;
+    height:500px;
+    /* Prevent touch scrolling on canvas */
 }
 
 .scribble-tools {
-    margin-top: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
 }
 
 .scribble-tools button {
-    margin-right: 5px;
+    padding: 5px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: #343333;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.scribble-tools button:hover {
+    background: #e0e0e0;
+}
+
+.thickness-options {
+    display: flex;
+    gap: 5px;
 }

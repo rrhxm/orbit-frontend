@@ -9,16 +9,16 @@ class Image extends React.Component {
     constructor(props) {
         super(props);
         this.state = {
-            imageData: props.element.image_data || null, // Base64-encoded image data
+            imageData: props.element.image_data || null,
             imageName: props.element.title || `Image - ${new Date().toLocaleDateString()}`,
             deleteMenuOpen: false,
-            stream: null, // For camera stream
-            showCamera: false, // To toggle camera view
+            stream: null,
+            showCamera: false,
+            isNew: !props.element.image_data && !props.element.title, // Flag for new elements
         };
         this.videoRef = React.createRef();
         this.canvasRef = React.createRef();
         this.fileInputRef = React.createRef();
-        // Bind the handleFileUpload method
         this.handleFileUpload = this.handleFileUpload.bind(this);
     }
 
@@ -29,7 +29,6 @@ class Image extends React.Component {
     }
 
     componentWillUnmount() {
-        // Stop the camera stream when the component unmounts
         if (this.state.stream) {
             this.state.stream.getTracks().forEach((track) => track.stop());
         }
@@ -39,7 +38,6 @@ class Image extends React.Component {
         this.props.onDoubleClick(this.props.element);
     };
 
-    // Open the camera
     openCamera = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: true });
@@ -55,7 +53,6 @@ class Image extends React.Component {
         }
     };
 
-    // Capture a photo from the camera
     capturePhoto = () => {
         const video = this.videoRef.current;
         const canvas = this.canvasRef.current;
@@ -66,15 +63,16 @@ class Image extends React.Component {
             ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
             const imageData = canvas.toDataURL("image/png");
             this.setState({ imageData, showCamera: false }, () => {
-                // Stop the camera stream
-                if (this.state.stream) {
-                    this.state.stream.getTracks().forEach((track) => track.stop());
+                if (this.state.isNew) {
+                    this.handleSave(); // Save new element immediately
                 }
             });
+            if (this.state.stream) {
+                this.state.stream.getTracks().forEach((track) => track.stop());
+            }
         }
     };
 
-    // Handle file upload from PC
     handleFileUpload(event) {
         const file = event.target.files[0];
         if (file) {
@@ -82,14 +80,38 @@ class Image extends React.Component {
             reader.onload = (e) => {
                 this.setState({
                     imageData: e.target.result,
-                    imageName: file.name,
+                    imageName: file.name || `Image - ${new Date().toLocaleDateString()}`,
+                }, () => {
+                    if (this.state.isNew) {
+                        this.handleSave(); // Save new element immediately
+                    }
                 });
             };
             reader.readAsDataURL(file);
         }
     }
 
-    // Render the closed view (placeholder or image)
+    handleSave = async () => {
+        const updates = {};
+        if (this.state.imageData && (!this.props.element.image_data || this.state.imageData !== this.props.element.image_data)) {
+            updates.image_data = this.state.imageData;
+        }
+        if (this.state.imageName && this.state.imageName !== this.props.element.title) {
+            updates.title = this.state.imageName;
+        }
+        if (Object.keys(updates).length > 0) {
+            try {
+                await this.props.updateElement(this.props.element._id, updates);
+                if (this.props.onUpdate) {
+                    this.props.onUpdate({ ...this.props.element, ...updates });
+                }
+                this.setState({ isNew: false }); // Mark as not new after first save
+            } catch (error) {
+                console.error("Failed to save image:", error);
+            }
+        }
+    };
+
     renderClosed() {
         const { element } = this.props;
         return (
@@ -113,7 +135,6 @@ class Image extends React.Component {
         );
     }
 
-    // Render the expanded view (for uploading or capturing an image)
     renderOpened() {
         const { element, onClose } = this.props;
         const { imageData, imageName, deleteMenuOpen, showCamera } = this.state;
@@ -164,12 +185,7 @@ class Image extends React.Component {
                         <BiCollapseAlt
                             className="close-icon"
                             onClick={async () => {
-                                if (imageData) {
-                                    await this.props.updateElement(element._id, {
-                                        title: imageName,
-                                        image_data: imageData,
-                                    });
-                                }
+                                await this.handleSave(); // Save changes or new data on close
                                 onClose();
                                 this.setState({ deleteMenuOpen: false, showCamera: false });
                                 if (this.state.stream) {
