@@ -25,7 +25,8 @@ import { MdOutlineAddTask } from "react-icons/md";
 import { IoSearch } from "react-icons/io5";
 
 // Set the base URL for Axios
-axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com";
+// axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com";
+axios.defaults.baseURL = "http://localhost:8001/";
 
 // Base Element class for common functionality
 class Element {

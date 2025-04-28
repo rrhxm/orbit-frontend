@@ -649,7 +649,7 @@ body {
     color: #ffffff;
     padding-left: 5px;
     padding-right: 5px;
-    outline: none;
+    /* outline: none; */
     display: block;
     overflow: hidden;
     text-shadow: 2px 2px 5px rgb(0, 0, 0);
