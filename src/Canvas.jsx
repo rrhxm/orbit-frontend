@@ -484,12 +484,12 @@ const Canvas = () => {
           </div>
 
           {/* Add Button */}
-          <img
-            src="/add-icon.svg"
-            alt="Add"
+          <div
             className="add-button"
             onClick={() => setMenuOpen(!menuOpen)}
-          />
+          >
+            <img src="/overlay-logo.svg" alt="Add" className="add-button-icon" />
+          </div>
           {menuOpen && (
             <div className="add-dropdown-menu">
               <div

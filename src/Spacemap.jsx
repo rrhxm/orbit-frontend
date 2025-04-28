@@ -47,7 +47,7 @@ const Spacemap = ({ elements }) => {
         <div
           className="spacemap-viewport"
           style={{
-            left: Math.min(viewport.x / 20, 157), // Keep viewport within Spacemap bounds
+            left: Math.min(viewport.x / 20, 158), // Keep viewport within Spacemap bounds
             top: viewport.y / 10,
           }}
         />

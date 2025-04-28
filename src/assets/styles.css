@@ -39,8 +39,7 @@ body {
     white-space: nowrap;
     scroll-behavior: smooth;
     scrollbar-width: none;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.305) 1px,
-            transparent 1px);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.305) 1px,transparent 1px);
     background-color: #000000;
     background-size: 20px 20px;
 }
@@ -52,7 +51,7 @@ body {
     left: 50%;
     transform: translateX(-50%);
     height: 40px;
-    width: 600px;
+    width: 650px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -78,7 +77,7 @@ body {
 .profile-button {
     position: absolute;
     height: 29px;
-    width: auto;
+    width: 118px;
     display: flex;
     align-items: center;
     gap: 3px;
@@ -133,13 +132,25 @@ body {
 /* Plus (+) button */
 .add-button {
     position: absolute;
-    left: 105px;
-    width: 29px;
     height: 29px;
-    cursor: url("/cursor.cur"), auto;
-    transition: transform 0.29s ease-in-out;
-    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    right:212px;
     display: flex;
+    align-items: center;
+    gap: 3px;
+    background: #40404050;
+    border-radius: 8px;
+    cursor: url("/cursor.cur"), auto;
+    user-select: none;
+}
+
+.add-button-icon {
+    width: 20px;
+    height: 20px;
+    /* filter: brightness(0.7); Adjust for visibility on dark background */
+    /* transition: filter 0.3s ease; */
 }
 
 /* Dropdown menu */
@@ -148,7 +159,7 @@ body {
     top: 50px;
     width: 330px;
     height: 60px;
-    transform: translateX(-10%);
+    transform: translateX(50%);
     grid-template-columns: repeat(4, 1fr);
     z-index: 7000;
     display: flex;
@@ -198,7 +209,7 @@ body {
 
 /* Time Display */
 .time-display {
-    width: auto;
+    width: 125px;
     height: 29px;
     position: absolute;
     right: 50%;
@@ -243,9 +254,9 @@ body {
 }
 
 .search-tab {
-    width: 88px;
+    width: 115px;
     height: 29px;
-    left: 141px;
+    left: 131px;
     position: absolute;
     background-color: #40404050;
     border: none;
@@ -263,7 +274,7 @@ body {
     height: 18px;
     align-items: center;
     /* opacity: 0.3; */
-    transform: translateX(-7px);
+    transform: translateX(-19px);
 }
 
 .search-button:hover .search-icon {
@@ -278,7 +289,7 @@ body {
     position: absolute;
     right: 5px;
     top: 6px;
-    width: 225px;
+    width: 200px;
     display: flex;
     height: 29px;
     background: #40404050;
