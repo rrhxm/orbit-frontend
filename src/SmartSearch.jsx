@@ -53,7 +53,7 @@ const SmartSearch = ({
                         query: searchQuery,
                     },
                 });
-                console.log("Normal search response:", response.data);
+                // console.log("Normal search response:", response.data);
                 if (!Array.isArray(response.data)) {
                     throw new Error("Unexpected response format: results should be an array");
                 }
@@ -85,7 +85,7 @@ const SmartSearch = ({
                     query: searchQuery,
                 },
             });
-            console.log("Smart search response:", response.data);
+            // console.log("Smart search response:", response.data);
             setSmartSearchResult(response.data);
         } catch (error) {
             console.error("Error fetching smart search results:", error);

@@ -4,6 +4,7 @@ import { BiCollapseAlt } from "react-icons/bi";
 import { FaTrashCan } from "react-icons/fa6";
 import { IoCamera } from "react-icons/io5";
 import { FaUpload } from "react-icons/fa";
+import { IoDownload } from "react-icons/io5";
 
 class Image extends React.Component {
     constructor(props) {
@@ -91,6 +92,40 @@ class Image extends React.Component {
         }
     }
 
+    handlePaste = (event) => {
+        const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+        for (const item of items) {
+            if (item.type.indexOf("image") !== -1) {
+                const blob = item.getAsFile();
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    this.setState({
+                        imageData: e.target.result,
+                        imageName: `Pasted Image - ${new Date().toLocaleDateString()}`,
+                    }, () => {
+                        if (this.state.isNew) {
+                            this.handleSave(); // Save new element immediately
+                        }
+                    });
+                };
+                reader.readAsDataURL(blob);
+                break; // Only handle the first image
+            }
+        }
+    };
+
+    handleDownload = () => {
+        const { imageData, imageName } = this.state;
+        if (imageData) {
+            const link = document.createElement("a");
+            link.href = imageData;
+            link.download = `${imageName}.png`; // Use imageName as the file name
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    };
+
     handleSave = async () => {
         const updates = {};
         if (this.state.imageData && (!this.props.element.image_data || this.state.imageData !== this.props.element.image_data)) {
@@ -140,7 +175,10 @@ class Image extends React.Component {
         const { imageData, imageName, deleteMenuOpen, showCamera } = this.state;
 
         return (
-            <div className="image-overlay">
+            <div 
+                className="image-overlay"
+                onPaste={imageData || showCamera ? null : this.handlePaste} // Only enable paste when no image is present
+            >
                 <div className="expanded-image">
                     {showCamera ? (
                         <div className="camera-view">
@@ -157,7 +195,7 @@ class Image extends React.Component {
                         </>
                     ) : (
                         <>
-                            <div className="add-image">Add Image</div>
+                            <div className="add-image">Add Image (or paste with Ctrl+V)</div>
                             <div className="image-options">
                                 <div onClick={this.openCamera} className="image-option-button">
                                     <IoCamera className="option-icon" />
@@ -181,6 +219,9 @@ class Image extends React.Component {
                         </>
                     )}
 
+                    <div className="download-button" onClick={this.handleDownload}>
+                        <IoDownload className="download-icon" />
+                    </div>
                     <div className="actions">
                         <BiCollapseAlt
                             className="close-icon"

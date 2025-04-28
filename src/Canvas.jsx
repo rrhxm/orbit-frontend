@@ -9,13 +9,13 @@ import Image from "./elements/Image";
 import Audio from "./elements/Audio";
 import Scribble from "./elements/Scribble";
 import SmartSearch from "./SmartSearch";
+import Profile from "./Profile";
 import "./assets/SmartSearch.css";
 
 // Icon imports
-import { TbNotes } from "react-icons/tb";
+import { MdStickyNote2 } from "react-icons/md";
 import { FaEarthAsia } from "react-icons/fa6";
 import { FaLink } from "react-icons/fa";
-import { PiVideoFill } from "react-icons/pi";
 import { MdAddPhotoAlternate } from "react-icons/md";
 import { MdDraw } from "react-icons/md";
 import { FaMicrophone } from "react-icons/fa";
@@ -80,19 +80,16 @@ class Element {
                 : element.type === "scribble"
                   ? "/scribbles/"
                   : "/elements/";
-      // console.log("Saving element:", element, "to endpoint:", endpoint);
       const response = await axios.post(endpoint, element, {
         params: { user_id: userId },
       });
-      // console.log("Response from backend:", response.data);
       this.setElements((prevElements) => {
         const newElements = [...prevElements, { ...response.data, _id: response.data._id }];
-        // console.log("Updated elements state:", newElements);
         return newElements;
       });
       showNotification(
-        `${element.type} added successfully`,
-        "notif-success",
+        `Element added successfully`,
+        "notif-added",
         <FaCircleCheck />
       );
     } catch (error) {
@@ -110,7 +107,6 @@ class Element {
     try {
       const hasChanges = this.detectChanges(originalElement, updatedData);
       if (!hasChanges) {
-        // console.log(`No changes detected for element ${id}, skipping update`);
         return;
       }
 
@@ -138,7 +134,11 @@ class Element {
         params: { user_id: userId },
       });
       this.setElements((prevElements) => prevElements.filter((el) => el._id !== id));
-      showNotification("Element deleted successfully", "notif-success", <FaCircleCheck />);
+      showNotification(
+        "Element deleted successfully",
+        "notif-deleted",
+        <FaCircleCheck />
+      );
     } catch (error) {
       console.error("Error deleting element:", error);
       showNotification(
@@ -161,6 +161,7 @@ const Canvas = () => {
   const [notification, setNotification] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showOverlay, setShowOverlay] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [canvasWidth, setCanvasWidth] = useState(window.innerWidth * 2);
   const [dragOffset, setDragOffset] = useState({ offsetX: 0, offsetY: 0 });
@@ -301,13 +302,15 @@ const Canvas = () => {
           title:
             elementType === "task"
               ? ""
-              : elementType === "image"
-                ? `Image ${formattedDate}`
-                : elementType === "audio"
-                  ? `Audio ${formattedDate}`
-                  : elementType === "scribble"
-                    ? `Scribble ${formattedDate}`
-                    : `Note ${formattedDate}`,
+              : elementType === "note"
+                ? ""
+                : elementType === "image"
+                  ? `Image ${formattedDate}`
+                  : elementType === "audio"
+                    ? `Audio ${formattedDate}`
+                    : elementType === "scribble"
+                      ? `Scribble ${formattedDate}`
+                      : `Note ${formattedDate}`,
         };
         // Only add fields if they have meaningful values
         if (elementType === "note") newElement.content = "";
@@ -368,6 +371,13 @@ const Canvas = () => {
         setMenuOpen(false);
       }
       if (
+        profileOpen &&
+        !event.target.closest(".expanded-profile") &&
+        !event.target.closest(".profile-button")
+      ) {
+        setProfileOpen(false);
+      }
+      if (
         dropdownOpen &&
         !event.target.closest(".profile-dropdown-menu") &&
         !event.target.closest(".profile-button")
@@ -377,7 +387,7 @@ const Canvas = () => {
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen, dropdownOpen]);
+  }, [menuOpen, profileOpen, dropdownOpen]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -437,7 +447,7 @@ const Canvas = () => {
     }
   };
 
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
+  const toggleProfile = () => setProfileOpen(true);
 
   const handleLogout = async () => {
     try {
@@ -466,18 +476,11 @@ const Canvas = () => {
       {/* Floating Toolbar */}
       <div className="toolbar">
         <div className="toolbar-left">
-          <div className="profile-button" onClick={toggleDropdown}>
-            <img src={user?.photoURL} alt="Profile" className="profile-pic" />
+          <div className="profile-button" onClick={toggleProfile}>
+            <img src={user?.photoURL} alt="Profile" className="toolbar-profile-pic" />
             <span className="greeting-text">
               {user?.displayName?.split(" ")[0] || "User"}
             </span>
-            {dropdownOpen && (
-              <div className="profile-dropdown-menu">
-                <div className="logout-button" onClick={handleLogout}>
-                  Logout
-                </div>
-              </div>
-            )}
           </div>
 
           {/* Add Button */}
@@ -494,7 +497,7 @@ const Canvas = () => {
                 onDragStart={(event) => handleDragStart(event, "Text Note")}
                 className="menu-item"
               >
-                <TbNotes className="menu-icon" />
+                <MdStickyNote2 className="menu-icon" />
               </div>
               <div
                 draggable
@@ -706,7 +709,7 @@ const Canvas = () => {
         </div>
       )}
 
-      {/* Smart Search Overlay */}
+      {/* Smart crypto Search Overlay */}
       {isSearchVisible && (
         <SmartSearch
           elements={elements}
@@ -722,6 +725,15 @@ const Canvas = () => {
           setEditingElement={setEditingElement}
           isVisible={isSearchVisible}
           onClose={() => setIsSearchVisible(false)}
+        />
+      )}
+
+      {/* Profile Overlay */}
+      {profileOpen && (
+        <Profile
+          user={user}
+          handleLogout={handleLogout}
+          onClose={() => setProfileOpen(false)}
         />
       )}
     </div>
