@@ -114,9 +114,21 @@ class Audio extends React.Component {
         }
     };
 
-    stopRecording = () => {
+    stopRecording = async () => {
         if (this.state.mediaRecorder && this.state.isRecording) {
             this.state.mediaRecorder.stop();
+            // Save audio data to the database immediately
+            if (this.state.audioData) {
+                try {
+                    await this.props.updateElement(this.props.element._id, { audio_data: this.state.audioData });
+                    if (this.props.onUpdate) {
+                        this.props.onUpdate({ ...this.props.element, audio_data: this.state.audioData });
+                    }
+                    this.setState({ isNew: false });
+                } catch (error) {
+                    console.error("Failed to save audio on stop:", error);
+                }
+            }
         }
     };
 

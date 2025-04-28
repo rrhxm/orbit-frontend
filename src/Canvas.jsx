@@ -80,14 +80,14 @@ class Element {
                 : element.type === "scribble"
                   ? "/scribbles/"
                   : "/elements/";
-      console.log("Saving element:", element, "to endpoint:", endpoint);
+      // console.log("Saving element:", element, "to endpoint:", endpoint);
       const response = await axios.post(endpoint, element, {
         params: { user_id: userId },
       });
-      console.log("Response from backend:", response.data);
+      // console.log("Response from backend:", response.data);
       this.setElements((prevElements) => {
         const newElements = [...prevElements, { ...response.data, _id: response.data._id }];
-        console.log("Updated elements state:", newElements);
+        // console.log("Updated elements state:", newElements);
         return newElements;
       });
       showNotification(
@@ -110,7 +110,7 @@ class Element {
     try {
       const hasChanges = this.detectChanges(originalElement, updatedData);
       if (!hasChanges) {
-        console.log(`No changes detected for element ${id}, skipping update`);
+        // console.log(`No changes detected for element ${id}, skipping update`);
         return;
       }
 
