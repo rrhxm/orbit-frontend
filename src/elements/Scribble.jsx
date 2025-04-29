@@ -1,9 +1,15 @@
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
-import { MdEdit } from "react-icons/md";
-import { FaSun, FaMoon } from "react-icons/fa";
+import { BiCollapseAlt } from "react-icons/bi";
+import { FaTrashCan } from "react-icons/fa6";
+import { FaMoon } from "react-icons/fa";
 import { SketchPicker } from "react-color";
 import { TbScribble } from "react-icons/tb";
+import { BsPencilFill } from "react-icons/bs";
+import { BsFillEraserFill } from "react-icons/bs";
+import { IoMdColorPalette } from "react-icons/io";
+import { FaCircle } from "react-icons/fa6";
+import { MdSunny } from "react-icons/md";
 
 const Scribble = ({
     element,
@@ -12,6 +18,7 @@ const Scribble = ({
     onDragStart,
     onDragEnd,
     updateElement,
+    deleteMenuOpen,
     deleteElement,
     onClose,
     userId,
@@ -128,7 +135,7 @@ const Scribble = ({
                     top: `${element.y}px`,
                 }}
                 onDoubleClick={(e) => {
-                    console.log("Double click detected on scribble:", element._id);
+                    // console.log("Double click detected on scribble:", element._id);
                     onDoubleClick(e);
                 }}
                 onDragStart={onDragStart}
@@ -164,26 +171,77 @@ const Scribble = ({
                     height={300}
                     className="scribble-canvas"
                     style={{ background: background === "sun" ? "#fff" : "#000" }}
-                    />
+                />
                 <div className="scribble-tools">
-                    <button onClick={() => toggleTool("pencil")}>Pencil</button>
-                    <button onClick={() => toggleTool("eraser")}>Eraser</button>
-                    <button onClick={() => setShowColorPicker(!showColorPicker)}>Color</button>
+                    <button onClick={() => toggleTool("pencil")}>
+                        <BsPencilFill />
+                    </button>
+                    <button onClick={() => toggleTool("eraser")}>
+                        <BsFillEraserFill />
+                    </button>
+                    <button onClick={() => setShowColorPicker(!showColorPicker)}>
+                        <IoMdColorPalette />
+                    </button>
                     {showColorPicker && (
                         <SketchPicker color={color} onChange={changeColor} />
                     )}
                     <div className="thickness-options">
-                        <button onClick={() => changeThickness(2)}>Thin</button>
-                        <button onClick={() => changeThickness(5)}>Medium</button>
-                        <button onClick={() => changeThickness(10)}>Thick</button>
+                        <button onClick={() => changeThickness(2)}>
+                            <FaCircle size={4} />
+                        </button>
+                        <button onClick={() => changeThickness(5)}>
+                            <FaCircle size={8} />
+                        </button>
+                        <button onClick={() => changeThickness(10)}>
+                            <FaCircle size={15} />
+                        </button>
                     </div>
                     <button onClick={toggleBackground}>
-                        {background === "sun" ? <FaSun /> : <FaMoon />}
+                        {background === "sun" ? <MdSunny /> : <FaMoon />}
                     </button>
-                    <button onClick={handleDelete}>Delete</button>
-                    <button onClick={onClose}>Close</button>
                 </div>
-
+                <div className="actions">
+                    <BiCollapseAlt
+                        className="close-icon"
+                        onClick={async () => {
+                            await this.handleSave();
+                            onClose();
+                            this.setState({ deleteMenuOpen: false });
+                        }}
+                    />
+                    <div className="Delete">
+                        <FaTrashCan
+                            className="delete-icon"
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                this.setState({ deleteMenuOpen: true });
+                            }}
+                        />
+                        {deleteMenuOpen && (
+                            <div className="delete-confirmation" onClick={(e) => e.stopPropagation()}>
+                                <div className="confirm">
+                                    <p>Are you sure you want to delete this item permanently?</p>
+                                </div>
+                                <div
+                                    className="cancel"
+                                    onClick={() => this.setState({ deleteMenuOpen: false })}
+                                >
+                                    Cancel
+                                </div>
+                                <div
+                                    className="delete-permanently"
+                                    onClick={async () => {
+                                        await this.props.deleteElement(element._id);
+                                        onClose();
+                                        this.setState({ deleteMenuOpen: false });
+                                    }}
+                                >
+                                    Delete
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
         </div>
     );

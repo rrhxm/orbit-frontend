@@ -1,7 +1,10 @@
 import React from "react";
 import { BiCollapseAlt } from "react-icons/bi";
 import { FaTrashCan } from "react-icons/fa6";
-import { MdStickyNote2 } from "react-icons/md";
+import { HiMiniPencilSquare } from "react-icons/hi2";
+
+
+
 
 class Note extends React.Component {
     constructor(props) {
@@ -38,7 +41,7 @@ class Note extends React.Component {
                     onDragEnd={this.props.onDragEnd}
                     onDoubleClick={this.handleDoubleClick}
                 >
-                    <MdStickyNote2 className="placeholder-icon" />
+                    <HiMiniPencilSquare className="placeholder-icon" />
                 </div>
             );
         }
