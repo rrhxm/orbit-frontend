@@ -7,7 +7,6 @@ import Scribble from "./elements/Scribble";
 import axios from "axios";
 import "./assets/SmartSearch.css";
 import { IoSearch } from "react-icons/io5";
-import { LuOrbit } from "react-icons/lu";
 
 const SmartSearch = ({
     elements,
@@ -21,28 +20,10 @@ const SmartSearch = ({
     onClose,
 }) => {
     const [searchQuery, setSearchQuery] = useState("");
-    const [normalSearchResults, setNormalSearchResults] = useState([]);
-    const [smartSearchResult, setSmartSearchResult] = useState(null);
+    const [searchResults, setSearchResults] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
     const [errorMessage, setErrorMessage] = useState(null);
     const [resultCount, setResultCount] = useState(0);
-
-    // Index user data when component mounts
-    useEffect(() => {
-        const indexUserData = async () => {
-            try {
-                await axios.post("/index_data", {
-                    user_id: userId,
-                });
-            } catch (error) {
-                console.error("Error indexing user data:", error);
-            }
-        };
-
-        if (userId) {
-            indexUserData();
-        }
-    }, [userId]);
 
     // Debounce function
     const debounce = (func, delay) => {
@@ -61,14 +42,13 @@ const SmartSearch = ({
     // Normal search (keyword-based)
     useEffect(() => {
         if (searchQuery.trim() === "") {
-            setNormalSearchResults([]);
-            setSmartSearchResult(null);
+            setSearchResults([]);
             setErrorMessage(null);
             setResultCount(0);
             return;
         }
 
-        const fetchNormalSearchResults = async () => {
+        const fetchSearchResults = async () => {
             setIsLoading(true);
             setErrorMessage(null);
             setResultCount(0);
@@ -88,8 +68,8 @@ const SmartSearch = ({
                 }
 
                 // Log response for debugging
-                console.log("Normal search query:", processedQuery);
-                console.log("Normal search response:", response.data);
+                console.log("Search query:", processedQuery);
+                console.log("Search response:", response.data);
 
                 // Client-side filtering and sorting
                 const filteredResults = response.data
@@ -111,11 +91,11 @@ const SmartSearch = ({
                         return (b.similarity || 0) - (a.similarity || 0);
                     });
 
-                setNormalSearchResults(filteredResults);
+                setSearchResults(filteredResults);
                 setResultCount(filteredResults.length);
             } catch (error) {
-                console.error("Error fetching normal search results:", error);
-                setNormalSearchResults([]);
+                console.error("Error fetching search results:", error);
+                setSearchResults([]);
                 setResultCount(0);
                 setErrorMessage(
                     error.response?.data?.detail || "Failed to fetch search results. Please try again."
@@ -125,41 +105,9 @@ const SmartSearch = ({
             }
         };
 
-        const debouncedFetch = debounce(fetchNormalSearchResults, 500);
+        const debouncedFetch = debounce(fetchSearchResults, 500);
         debouncedFetch();
     }, [searchQuery, userId]);
-
-    // Smart search (triggered by button)
-    const handleSmartSearch = async () => {
-        if (!searchQuery.trim()) return;
-
-        setIsLoading(true);
-        setErrorMessage(null);
-
-        try {
-            const response = await axios.get("/smart_search", {
-                params: {
-                    user_id: userId,
-                    query: searchQuery,
-                },
-            });
-
-            setSmartSearchResult(response.data);
-            setResultCount(response.data.elements.length);
-        } catch (error) {
-            console.error("Error fetching smart search results:", error);
-            setSmartSearchResult({
-                answer: "An error occurred while processing your request.",
-                elements: [],
-            });
-            setResultCount(0);
-            setErrorMessage(
-                error.response?.data?.detail || "Failed to fetch smart search results. Please try again."
-            );
-        } finally {
-            setIsLoading(false);
-        }
-    };
 
     // Highlight matched text
     const highlightText = (text, query) => {
@@ -181,6 +129,7 @@ const SmartSearch = ({
             userId,
         };
 
+        // Determine matched field for snippet
         const processedQuery = preprocessQuery(searchQuery);
         let snippet = "";
         if (el.title?.toLowerCase().includes(processedQuery)) {
@@ -202,14 +151,14 @@ const SmartSearch = ({
                 {el.type === "image" && <Image {...commonProps} />}
                 {el.type === "audio" && <Audio {...commonProps} />}
                 {el.type === "scribble" && <Scribble {...commonProps} />}
-                {snippet && (
+                {/* {snippet && (
                     <div
                         className="search-snippet"
                         dangerouslySetInnerHTML={{
                             __html: highlightText(snippet, processedQuery),
                         }}
                     />
-                )}
+                )} */}
                 {el.similarity && (
                     <div className="similarity-score">
                         Relevance: {(el.similarity * 100).toFixed(2)}%
@@ -233,9 +182,6 @@ const SmartSearch = ({
                         placeholder="Search notes, tasks, audio..."
                         className="search-input"
                     />
-                    <button className="smart-search-button" onClick={handleSmartSearch}>
-                        <LuOrbit />
-                    </button>
                 </div>
 
                 <div className="search-results">
@@ -255,30 +201,14 @@ const SmartSearch = ({
                         </div>
                     ) : (
                         <div className="search-results-content">
-                            {smartSearchResult && (
-                                <div className="smart-search-answer">
-                                    <p>{smartSearchResult.answer}</p>
-                                </div>
-                            )}
-                            {resultCount > 0 && (
-                                <div className="result-count">
-                                    Found {resultCount} result{resultCount !== 1 ? "s" : ""}
-                                </div>
-                            )}
+                            {/* {resultCount > 0 && (
+                                // <div className="result-count">
+                                //     Found {resultCount} result{resultCount !== 1 ? "s" : ""}
+                                // </div>
+                            )} */}
                             <div className="search-results-list">
-                                {smartSearchResult ? (
-                                    smartSearchResult.elements.length > 0 ? (
-                                        smartSearchResult.elements.map((el) => {
-                                            const fullElement = elements.find(e => e._id === el._id);
-                                            return fullElement ? <div key={el._id}>{renderElement(fullElement)}</div> : null;
-                                        })
-                                    ) : (
-                                        <div className="no-result">
-                                            <p>No related elements found.</p>
-                                        </div>
-                                    )
-                                ) : normalSearchResults.length > 0 ? (
-                                    normalSearchResults.map((el) => (
+                                {searchResults.length > 0 ? (
+                                    searchResults.map((el) => (
                                         <div key={el._id}>{renderElement(el)}</div>
                                     ))
                                 ) : (
