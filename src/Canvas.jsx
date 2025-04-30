@@ -10,7 +10,7 @@ import Audio from "./elements/Audio";
 import Scribble from "./elements/Scribble";
 import SmartSearch from "./SmartSearch";
 import Profile from "./Profile";
-import CatchUp from "./CatchUp"; // Import the new CatchUp component
+import CatchUp from "./Catchup"; // Import the new CatchUp component
 import "./assets/SmartSearch.css";
 
 // Icon imports

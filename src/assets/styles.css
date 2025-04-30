@@ -1830,20 +1830,36 @@ service cloud.firestore {
     cursor: url("/cursor.cur"), auto;
 }
 
+.catchup-expanded h2 {
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+
 .catchup-content {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
 }
 
 .catchup-time,
 .catchup-day,
 .catchup-weather,
-.catchup-tasks,
-.catchup-elements {
-    padding: 10px;
+.catchup-tasks {
+    padding: 10px 15px;
     background: #2a2a2a;
     border-radius: 8px;
+    font-size: 16px;
+}
+
+.catchup-time {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.catchup-day {
+    font-size: 16px;
+    color: #ccc;
 }
 
 .catchup-calendar {
@@ -1851,20 +1867,87 @@ service cloud.firestore {
     background: #2a2a2a;
     border-radius: 8px;
     text-align: center;
+    color: #fff;
+    font-size: 14px;
+}
+
+.calendar-header {
+    font-size: 16px;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.calendar-days-of-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.calendar-day-of-week {
+    color: #aaa;
+    font-size: 12px;
+}
+
+.calendar-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+}
+
+.calendar-day {
+    padding: 5px;
+    text-align: center;
+}
+
+.calendar-day.empty {
+    visibility: hidden;
+}
+
+.calendar-day.today {
+    background: #ff9900;
+    border-radius: 50%;
+    color: #fff;
+    font-weight: bold;
+}
+
+.catchup-weather {
+    font-size: 16px;
 }
 
 .catchup-tasks h3 {
     margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 .catchup-task {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     padding: 5px;
     background: #3a3a3a;
     border-radius: 5px;
     margin-bottom: 5px;
+    font-size: 14px;
 }
 
-.catchup-task span {
+.task-title {
+    flex: 1;
+}
+
+.task-due {
+    color: #ccc;
+    margin-left: 10px;
+}
+
+.priority-high {
+    color: yellow;
+    margin-left: 5px;
+}
+
+.priority-medium {
     color: yellow;
     margin-left: 5px;
 }
