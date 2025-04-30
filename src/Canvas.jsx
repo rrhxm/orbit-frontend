@@ -10,6 +10,7 @@ import Audio from "./elements/Audio";
 import Scribble from "./elements/Scribble";
 import SmartSearch from "./SmartSearch";
 import Profile from "./Profile";
+import CatchUp from "./CatchUp"; // Import the new CatchUp component
 import "./assets/SmartSearch.css";
 
 // Icon imports
@@ -25,7 +26,6 @@ import { MdOutlineAddTask } from "react-icons/md";
 import { IoSearch } from "react-icons/io5";
 
 // Set the base URL for Axios
-// axios.defaults.baseURL = "https://orbit-backend-6wcr.onrender.com";
 axios.defaults.baseURL = "http://localhost:8001/";
 
 // Base Element class for common functionality
@@ -163,7 +163,12 @@ const Canvas = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [canvasWidth, setCanvasWidth] = useState(window.innerWidth * 2);
+  const [catchUpOpen, setCatchUpOpen] = useState(false); // New state for Catch Up overlay
+  const [canvasWidth, setCanvasWidth] = useState(() => {
+    // Initialize canvas width from localStorage or default to 2 * screen width
+    const savedWidth = localStorage.getItem(`canvasWidth-${user?.uid}`);
+    return savedWidth ? parseInt(savedWidth, 10) : window.innerWidth * 2;
+  });
   const [dragOffset, setDragOffset] = useState({ offsetX: 0, offsetY: 0 });
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   const [page, setPage] = useState(1);
@@ -222,6 +227,13 @@ const Canvas = () => {
     }
   }, [user, page, hasMore]);
 
+  // Persist canvas width in localStorage whenever it changes
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem(`canvasWidth-${user.uid}`, canvasWidth.toString());
+    }
+  }, [canvasWidth, user]);
+
   // Handle drag start for elements
   const handleDragStart = (event, elementId) => {
     const rect = event.target.getBoundingClientRect();
@@ -236,20 +248,42 @@ const Canvas = () => {
   const handleDragEnd = useCallback(
     async (event, elementId) => {
       event.preventDefault();
-      const rect = canvasRef.current.getBoundingClientRect();
+      const canvas = canvasRef.current;
+      const rect = canvas.getBoundingClientRect();
       const newX = Math.round(event.clientX - rect.left - dragOffset.offsetX);
       const newY = Math.round(event.clientY - rect.top - dragOffset.offsetY);
 
       const screenWidth = window.innerWidth;
       const expansionThreshold = 100;
 
+      // Check if the element is near the right edge
       if (newX + expansionThreshold > canvasWidth - expansionThreshold) {
-        setCanvasWidth((prevWidth) => prevWidth + screenWidth);
-        requestAnimationFrame(() => {
-          document.querySelector(".canvas-container").scrollLeft += screenWidth / 2;
+        setCanvasWidth((prevWidth) => {
+          const newWidth = prevWidth + screenWidth;
+          // Recenter the canvas to the new element position after expansion
+          requestAnimationFrame(() => {
+            const centerX = newX - screenWidth / 2;
+            canvas.scrollTo({
+              left: centerX,
+              behavior: "smooth",
+            });
+          });
+          return newWidth;
         });
+      } else {
+        // Recenter the canvas if the element is within the current viewport
+        const scrollX = newX - screenWidth / 2;
+        if (scrollX >= 0 && scrollX < canvasWidth - screenWidth) {
+          requestAnimationFrame(() => {
+            canvas.scrollTo({
+              left: scrollX,
+              behavior: "smooth",
+            });
+          });
+        }
       }
 
+      // Update the element's position
       setElements((prev) =>
         prev.map((el) =>
           el._id === elementId ? { ...el, x: newX, y: newY } : el
@@ -271,9 +305,25 @@ const Canvas = () => {
   // Handle drop for new elements
   const handleDrop = async (event) => {
     event.preventDefault();
-    const rect = canvasRef.current.getBoundingClientRect();
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
     const newX = Math.round(event.clientX - rect.left - dragOffset.offsetX);
     const newY = Math.round(event.clientY - rect.top - dragOffset.offsetY);
+
+    const screenWidth = window.innerWidth;
+    const expansionThreshold = 100;
+
+    // Expand canvas if the new element is near the right edge
+    if (newX + expansionThreshold > canvasWidth - expansionThreshold) {
+      setCanvasWidth((prevWidth) => {
+        const newWidth = prevWidth + screenWidth;
+        requestAnimationFrame(() => {
+          canvas.scrollLeft = newX - screenWidth / 2;
+        });
+        return newWidth;
+      });
+    }
+
     if (!Array.isArray(elements)) {
       console.error("Error: elements is not an array", elements);
       return;
@@ -384,10 +434,17 @@ const Canvas = () => {
       ) {
         setDropdownOpen(false);
       }
+      if (
+        catchUpOpen &&
+        !event.target.closest(".catchup-expanded") &&
+        !event.target.closest(".time-display")
+      ) {
+        setCatchUpOpen(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen, profileOpen, dropdownOpen]);
+  }, [menuOpen, profileOpen, dropdownOpen, catchUpOpen]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -488,7 +545,7 @@ const Canvas = () => {
             className="add-button"
             onClick={() => setMenuOpen(!menuOpen)}
           >
-            <img src="/overlay-logo.svg" alt="Add" className="add-button-icon" />
+            <img src="/overlay-logo.svg " alt="Add" className="add-button-icon" />
           </div>
           {menuOpen && (
             <div className="add-dropdown-menu">
@@ -546,7 +603,7 @@ const Canvas = () => {
         </div>
 
         <div className="toolbar-center">
-          <div className="time-display">
+          <div className="time-display" onClick={() => setCatchUpOpen(true)}>
             {formattedTime}
             <span className={`status-dot ${elements.length > 0 ? "green" : "red"}`}></span>
           </div>
@@ -565,7 +622,7 @@ const Canvas = () => {
 
         <Spacemap
           elements={elements}
-          canvasWidth={3000}
+          canvasWidth={canvasWidth}
           canvasHeight={2000}
           onNavigate={handleNavigate}
         />
@@ -709,7 +766,7 @@ const Canvas = () => {
         </div>
       )}
 
-      {/* Smart crypto Search Overlay */}
+      {/* Smart Search Overlay */}
       {isSearchVisible && (
         <SmartSearch
           elements={elements}
@@ -734,6 +791,15 @@ const Canvas = () => {
           user={user}
           handleLogout={handleLogout}
           onClose={() => setProfileOpen(false)}
+        />
+      )}
+
+      {/* Catch Up Overlay */}
+      {catchUpOpen && (
+        <CatchUp
+          currentTime={currentTime}
+          elements={elements}
+          onClose={() => setCatchUpOpen(false)}
         />
       )}
     </div>

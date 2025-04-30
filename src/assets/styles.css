@@ -39,7 +39,7 @@ body {
     white-space: nowrap;
     scroll-behavior: smooth;
     scrollbar-width: none;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.305) 1px,transparent 1px);
+    background-image: radial-gradient(rgba(255, 255, 255, 0.305) 1px, transparent 1px);
     background-color: #000000;
     background-size: 20px 20px;
 }
@@ -136,7 +136,7 @@ body {
     align-items: center;
     justify-content: center;
     width: 34px;
-    right:212px;
+    right: 212px;
     display: flex;
     align-items: center;
     gap: 3px;
@@ -356,7 +356,7 @@ body {
 
 .placeholder-icon {
     font-size: 14px;
-    fill: #f10000 ;
+    fill: #f10000;
 }
 
 .note-title {
@@ -808,9 +808,11 @@ body {
     background-color: #2d2d2d;
     position: absolute;
     bottom: 20px;
-    right: 90px; /* Positioned to the left of .actions (which is at right: 20px, and .actions width is 60px + 10px gap) */
+    right: 90px;
+    /* Positioned to the left of .actions (which is at right: 20px, and .actions width is 60px + 10px gap) */
     display: flex;
-    width: 30px; /* Smaller width since it only contains one icon */
+    width: 30px;
+    /* Smaller width since it only contains one icon */
     height: 30px;
     justify-content: center;
     align-items: center;
@@ -1053,8 +1055,10 @@ body {
     z-index: 3600;
     user-select: none;
     outline: none;
-    border: none; /* Remove default border */
-    border-radius: 50px; /* Rounded corners for the button */
+    border: none;
+    /* Remove default border */
+    border-radius: 50px;
+    /* Rounded corners for the button */
 }
 
 /* Gradient border using ::before */
@@ -1065,9 +1069,12 @@ body {
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg, #7400ae, #0329b0, #0089a8, #7400ae); /* Gradient border */
-    border-radius: 52px; /* Slightly larger radius to encompass the button */
-    z-index: -1; /* Place behind the button */
+    background: linear-gradient(45deg, #7400ae, #0329b0, #0089a8, #7400ae);
+    /* Gradient border */
+    border-radius: 52px;
+    /* Slightly larger radius to encompass the button */
+    z-index: -1;
+    /* Place behind the button */
 }
 
 /* Inner background to cover the gradient inside the border */
@@ -1078,9 +1085,12 @@ body {
     left: 0;
     right: 0;
     bottom: 0;
-    background: #2d2d2d; /* Match the button's background */
-    border-radius: 50px; /* Match the button's border-radius */
-    z-index: -1; /* Place above the gradient but below the content */
+    background: #2d2d2d;
+    /* Match the button's background */
+    border-radius: 50px;
+    /* Match the button's border-radius */
+    z-index: -1;
+    /* Place above the gradient but below the content */
 }
 
 .audio-overlay .expanded-audio .transcribe-button:hover {
@@ -1106,7 +1116,8 @@ body {
 }
 
 .audio-overlay .expanded-audio .transcribe-button.disabled::before {
-    background: linear-gradient(45deg, #ccc, #ddd, #eee); /* Muted gradient for disabled state */
+    background: linear-gradient(45deg, #ccc, #ddd, #eee);
+    /* Muted gradient for disabled state */
 }
 
 .transcription-heading {
@@ -1163,6 +1174,7 @@ body {
     0% {
         background-position: 200% 0;
     }
+
     100% {
         background-position: -200% 0;
     }
@@ -1537,7 +1549,7 @@ service cloud.firestore {
     height: 200px;
     border-radius: 25px;
     cursor: url("/cursor.cur"), auto;
-    background: rgba(58, 58, 58, 0.6);
+    background: rgba(229, 226, 47, 0.6);
     box-shadow: 0px 2px 9px rgba(0, 0, 0, 0.3);
     backdrop-filter: blur(6px);
     display: flex;
@@ -1551,20 +1563,27 @@ service cloud.firestore {
 .scribble-placeholder-icon {
     display: flex;
     align-items: center;
+    font-size: 100px;
     justify-content: center;
-    width: 100px;
-    height: 100px;
+    color: rgb(255, 249, 62);
 }
 
 .scribble-title {
-    width: 550px;
-    overflow: hidden;
-    font-size: 25px;
+    font-size: 18px;
+    width: 180px;
+    position: absolute;
     font-weight: bold;
-    padding-top: 10px;
-    text-align: center;
-    color: #333333;
-    cursor: url("/cursor.cur"), auto;
+    bottom: 5px;
+    left: 0;
+    right: 0;
+    text-align: left;
+    color: #ffffff;
+    padding-left: 5px;
+    padding-right: 5px;
+    /* outline: none; */
+    display: block;
+    overflow: hidden;
+    text-shadow: 2px 2px 5px rgb(0, 0, 0);
 }
 
 .scribble-overlay {
@@ -1586,7 +1605,6 @@ service cloud.firestore {
     position: absolute;
     gap: 10px;
     background: #11111190;
-    /* padding: 20px; */
     border-radius: 30px;
     width: 550px;
     height: 550px;
@@ -1610,10 +1628,10 @@ service cloud.firestore {
     font-size: 25px;
     font-family: Lexend;
     display: block;
-    padding-left: 25px;
-    padding-top: 20px;
-    padding-bottom: 20px;
-    padding-right: 25px;
+    padding-left: 5px;
+    padding-top: 25px;
+    padding-bottom: 15px;
+    padding-right: 5px;
     outline: none;
     border-width: 0px;
     overflow: hidden;
@@ -1622,7 +1640,7 @@ service cloud.firestore {
 .scribble-canvas {
     touch-action: none;
     width: 550px;
-    height:1000px;
+    height: 1400px;
     border-bottom-left-radius: 30px;
     border-bottom-right-radius: 30px;
 }
@@ -1641,6 +1659,18 @@ service cloud.firestore {
     border-radius: 50px;
     z-index: 3600;
     user-select: none;
+}
+
+.custom-colorpicker {
+    border-radius: 8px !important;
+    background: #6d6d6d !important;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
+    triangle: hide;
+}
+
+.colorpicker-wrapper {
+    position: relative;
+    /* Ensure wrapper positioning context */
 }
 
 .scribble-tools button {
@@ -1703,7 +1733,8 @@ service cloud.firestore {
     padding: 8px;
 }
 
-.info-icon, .report-icon {
+.info-icon,
+.report-icon {
     font-size: 20px;
     color: #888888;
 }
@@ -1731,7 +1762,7 @@ service cloud.firestore {
 
 .profile-name {
     font-size: 24px;
-    font-weight:600;
+    font-weight: 600;
 }
 
 .profile-email {
@@ -1744,7 +1775,8 @@ service cloud.firestore {
     justify-content: space-between;
 }
 
-.delete-account-button, .logout-button {
+.delete-account-button,
+.logout-button {
     font-size: 12px;
     height: 28px;
     align-items: center;
@@ -1765,4 +1797,74 @@ service cloud.firestore {
     background-color: #a80000;
     color: #fff;
     border: none;
+}
+
+.catchup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(7px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3600;
+    isolation: isolate;
+}
+
+.catchup-expanded {
+    background: #11111190;
+    padding: 20px;
+    border-radius: 30px;
+    width: 650px;
+    height: 550px;
+    color: rgb(255, 255, 255);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    border: 2px solid rgb(66, 66, 66);
+    isolation: isolate;
+    cursor: url("/cursor.cur"), auto;
+}
+
+.catchup-content {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.catchup-time,
+.catchup-day,
+.catchup-weather,
+.catchup-tasks,
+.catchup-elements {
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 8px;
+}
+
+.catchup-calendar {
+    padding: 10px;
+    background: #2a2a2a;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.catchup-tasks h3 {
+    margin: 0 0 10px 0;
+}
+
+.catchup-task {
+    padding: 5px;
+    background: #3a3a3a;
+    border-radius: 5px;
+    margin-bottom: 5px;
+}
+
+.catchup-task span {
+    color: yellow;
+    margin-left: 5px;
 }

@@ -3,7 +3,7 @@ import axios from "axios";
 import { BiCollapseAlt } from "react-icons/bi";
 import { FaTrashCan } from "react-icons/fa6";
 import { FaMoon } from "react-icons/fa";
-import { SketchPicker } from "react-color";
+import { GithubPicker } from "react-color";
 import { TbScribble } from "react-icons/tb";
 import { BsPencilFill } from "react-icons/bs";
 import { BsFillEraserFill } from "react-icons/bs";
@@ -18,7 +18,6 @@ const Scribble = ({
     onDragStart,
     onDragEnd,
     updateElement,
-    deleteMenuOpen,
     deleteElement,
     onClose,
     userId,
@@ -31,10 +30,11 @@ const Scribble = ({
     const [thickness, setThickness] = useState(2);
     const [background, setBackground] = useState("sun"); // 'sun' or 'moon'
     const [showColorPicker, setShowColorPicker] = useState(false);
+    const [deleteMenuOpen, setDeleteMenuOpen] = useState(false);
 
     useEffect(() => {
         const canvas = canvasRef.current;
-        if (!canvas) return; // Exit if canvas is not yet mounted
+        if (!canvas) return;
 
         const ctx = canvas.getContext("2d");
         if (!ctx) {
@@ -64,7 +64,7 @@ const Scribble = ({
         };
 
         const handleMouseMove = (e) => {
-            if (!isEditing || !isDrawing) return; // Ensure drawing only in editing mode
+            if (!isEditing || !isDrawing) return;
             const rect = canvas.getBoundingClientRect();
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
@@ -77,6 +77,9 @@ const Scribble = ({
                 ctx.globalCompositeOperation = "source-over";
                 ctx.strokeStyle = color;
             }
+            // Optimize by reducing redraw frequency
+            ctx.beginPath();
+            ctx.moveTo(x, y);
         };
 
         const handleMouseUp = () => {
@@ -85,22 +88,40 @@ const Scribble = ({
             if (isEditing) saveScribble();
         };
 
+        const handleMouseLeave = () => {
+            if (isDrawing) {
+                setIsDrawing(false);
+                ctx.closePath();
+                if (isEditing) saveScribble();
+            }
+        };
+
         canvas.addEventListener("mousedown", handleMouseDown);
         canvas.addEventListener("mousemove", handleMouseMove);
         canvas.addEventListener("mouseup", handleMouseUp);
-        canvas.addEventListener("mouseleave", handleMouseUp);
+        canvas.addEventListener("mouseleave", handleMouseLeave);
 
         return () => {
             canvas.removeEventListener("mousedown", handleMouseDown);
             canvas.removeEventListener("mousemove", handleMouseMove);
             canvas.removeEventListener("mouseup", handleMouseUp);
-            canvas.removeEventListener("mouseleave", handleMouseUp);
+            canvas.removeEventListener("mouseleave", handleMouseLeave);
         };
-    }, [isDrawing, tool, color, thickness, element.scribbleData, isEditing]);
+    }, [isEditing, isDrawing, tool, color, thickness, element.scribbleData]);
+
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (showColorPicker && !e.target.closest(".scribble-tools")) {
+                setShowColorPicker(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, [showColorPicker]);
 
     const saveScribble = () => {
         const canvas = canvasRef.current;
-        if (!canvas) return; // Safeguard against null
+        if (!canvas) return;
         const dataURL = canvas.toDataURL();
         updateElement(element._id, { title, scribbleData: dataURL }, userId);
     };
@@ -120,6 +141,7 @@ const Scribble = ({
 
     const handleDelete = () => {
         deleteElement(element._id);
+        setDeleteMenuOpen(false);
         onClose();
     };
 
@@ -131,23 +153,20 @@ const Scribble = ({
                     backgroundImage: element.scribbleData ? `url(${element.scribbleData})` : "none",
                     backgroundSize: "cover",
                     backgroundPosition: "center",
+                    backgroundColor: element.scribbleData ? (background === "sun" ? "#fff" : "#000") : "transparent",
                     left: `${element.x}px`,
                     top: `${element.y}px`,
                 }}
-                onDoubleClick={(e) => {
-                    // console.log("Double click detected on scribble:", element._id);
-                    onDoubleClick(e);
-                }}
+                onDoubleClick={onDoubleClick}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 draggable
             >
                 {!element.scribbleData && (
                     <div className="scribble-placeholder-icon">
-                        <TbScribble size={80} color="#fff" />
+                        <TbScribble />
                     </div>
                 )}
-                <div className="scribble-title">{title}</div>
             </div>
         );
     }
@@ -156,7 +175,7 @@ const Scribble = ({
         <div className="scribble-overlay" onClick={onClose}>
             <div
                 className="scribble-expanded"
-                onClick={(e) => e.stopPropagation()} // Prevent click from propagating to overlay
+                onClick={(e) => e.stopPropagation()}
             >
                 <input
                     type="text"
@@ -183,7 +202,22 @@ const Scribble = ({
                         <IoMdColorPalette />
                     </button>
                     {showColorPicker && (
-                        <SketchPicker color={color} onChange={changeColor} />
+                        <div
+                            className="colorpicker-wrapper"
+                            style={{
+                                position: "absolute",
+                                top: "-70px", // Adjusted to position above the toolbar
+                                left: "-5px", // Align with the button
+                                zIndex: 1000,
+                            }}
+                        >
+                            <GithubPicker
+                                className="custom-colorpicker"
+                                color={color}
+                                onChange={changeColor}
+                                triangle= "hide" // Use default triangle and position it
+                            />
+                        </div>
                     )}
                     <div className="thickness-options">
                         <button onClick={() => changeThickness(2)}>
@@ -203,18 +237,17 @@ const Scribble = ({
                 <div className="actions">
                     <BiCollapseAlt
                         className="close-icon"
-                        onClick={async () => {
-                            await this.handleSave();
+                        onClick={() => {
+                            saveScribble();
                             onClose();
-                            this.setState({ deleteMenuOpen: false });
                         }}
                     />
-                    <div className="Delete">
+                    <div className="delete">
                         <FaTrashCan
                             className="delete-icon"
                             onClick={(e) => {
                                 e.stopPropagation();
-                                this.setState({ deleteMenuOpen: true });
+                                setDeleteMenuOpen(true);
                             }}
                         />
                         {deleteMenuOpen && (
@@ -224,17 +257,13 @@ const Scribble = ({
                                 </div>
                                 <div
                                     className="cancel"
-                                    onClick={() => this.setState({ deleteMenuOpen: false })}
+                                    onClick={() => setDeleteMenuOpen(false)}
                                 >
                                     Cancel
                                 </div>
                                 <div
                                     className="delete-permanently"
-                                    onClick={async () => {
-                                        await this.props.deleteElement(element._id);
-                                        onClose();
-                                        this.setState({ deleteMenuOpen: false });
-                                    }}
+                                    onClick={handleDelete}
                                 >
                                     Delete
                                 </div>
