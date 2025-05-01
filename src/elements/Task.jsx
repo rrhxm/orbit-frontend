@@ -9,7 +9,7 @@ class Task extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      editTitle: props.element.title || "", // Start with empty title
+      editTitle: props.element.title || "",
       editDueDate: props.element.due_date || "",
       editDueTime: props.element.due_time || "",
       editPriority: props.element.priority || "low",
@@ -17,18 +17,15 @@ class Task extends React.Component {
       editCompleted: props.element.completed || false,
       editLastReset: props.element.last_reset || new Date().toISOString().split("T")[0],
       deleteMenuOpen: false,
-      isEdited: props.element.is_edited || false, // Track if the task has been edited
+      isEdited: props.element.is_edited || false,
     };
   }
 
-  // Lifecycle method to check for reset after the component mounts
   componentDidMount() {
     this.checkAndResetTask();
   }
 
-  // Lifecycle method to check for reset after the component updates
   componentDidUpdate(prevProps, prevState) {
-    // Only check for reset if relevant state or props have changed
     if (
       prevState.editRepeat !== this.state.editRepeat ||
       prevState.editLastReset !== this.state.editLastReset ||
@@ -43,7 +40,6 @@ class Task extends React.Component {
     this.props.onDoubleClick(this.props.element);
   };
 
-  // Format the due date for display
   formatDueDate(dueDate, dueTime) {
     if (!dueDate) return "No due date";
     const today = new Date();
@@ -60,7 +56,6 @@ class Task extends React.Component {
     return `Due ${due.toLocaleDateString()}, ${time}`;
   }
 
-  // Render priority indicators
   renderPriority(priority) {
     if (priority === "low") {
       return <span className="priority-low">!</span>;
@@ -72,7 +67,6 @@ class Task extends React.Component {
     return null;
   }
 
-  // Check if a repeating task needs to reset and update the state and backend
   checkAndResetTask = async () => {
     const { editRepeat, editLastReset, editCompleted } = this.state;
     const { element, updateElement } = this.props;
@@ -80,14 +74,11 @@ class Task extends React.Component {
     if (editRepeat === "yes") {
       const today = new Date().toISOString().split("T")[0];
       if (editLastReset !== today && editCompleted) {
-        // Update the state
         this.setState({
           editCompleted: false,
           editLastReset: today,
           isEdited: true,
         });
-
-        // Update the backend
         try {
           await updateElement(element._id, {
             completed: false,
@@ -101,13 +92,12 @@ class Task extends React.Component {
     }
   };
 
-  // Toggle completion status
   toggleCompletion = async () => {
     const { editCompleted, isEdited } = this.state;
     const { element } = this.props;
     const today = new Date().toISOString().split("T")[0];
     this.setState(
-      { editCompleted: !editCompleted, editLastReset: today, isEdited: true }, // Mark as edited when completing
+      { editCompleted: !editCompleted, editLastReset: today, isEdited: true },
       async () => {
         await this.props.updateElement(element._id, {
           completed: this.state.editCompleted,
@@ -122,7 +112,6 @@ class Task extends React.Component {
     const { element } = this.props;
     const { editDueDate, editDueTime, editPriority, editRepeat, editCompleted, isEdited } = this.state;
 
-    // If the task has not been edited, render the placeholder
     if (!isEdited) {
       return (
         <div
@@ -139,7 +128,6 @@ class Task extends React.Component {
       );
     }
 
-    // Use "Task" as the default title if none is provided
     const displayTitle = element.title && element.title.trim() !== "" ? element.title : "Task";
 
     return (
@@ -184,45 +172,64 @@ class Task extends React.Component {
             autoFocus
           />
           <div className="task-separator"></div>
-          <div className="task-options">
-            <div className="task-option">
-              <label>Due Date:</label>
+          <div className="task-options-grid">
+            <div className="task-option-group">
+              <label>Date:</label>
               <input
                 type="date"
                 value={editDueDate}
                 onChange={(e) => this.setState({ editDueDate: e.target.value, isEdited: true })}
               />
             </div>
-            <div className="task-option">
-              <label>Due Time:</label>
+            <div className="task-option-group">
+              <label>Time:</label>
               <input
                 type="time"
                 value={editDueTime}
                 onChange={(e) => this.setState({ editDueTime: e.target.value, isEdited: true })}
               />
             </div>
-            <div className="task-option">
+            <div className="task-option-group">
               <label>Priority:</label>
-              <select
-                value={editPriority}
-                onChange={(e) => this.setState({ editPriority: e.target.value, isEdited: true })}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-              </select>
+              <div className="segmented-control">
+                <button
+                  className={`segment ${editPriority === "low" ? "active" : ""}`}
+                  onClick={() => this.setState({ editPriority: "low", isEdited: true })}
+                >
+                  Low
+                </button>
+                <button
+                  className={`segment ${editPriority === "medium" ? "active" : ""}`}
+                  onClick={() => this.setState({ editPriority: "medium", isEdited: true })}
+                >
+                  Medium
+                </button>
+                <button
+                  className={`segment ${editPriority === "high" ? "active" : ""}`}
+                  onClick={() => this.setState({ editPriority: "high", isEdited: true })}
+                >
+                  High
+                </button>
+              </div>
             </div>
-            <div className="task-option">
+            <div className="task-option-group">
               <label>Repeat Daily:</label>
-              <select
-                value={editRepeat}
-                onChange={(e) => this.setState({ editRepeat: e.target.value, isEdited: true })}
-              >
-                <option value="yes">Yes</option>
-                <option value="no">No</option>
-              </select>
+              <div className="segmented-control">
+                <button
+                  className={`segment ${editRepeat === "yes" ? "active" : ""}`}
+                  onClick={() => this.setState({ editRepeat: "yes", isEdited: true })}
+                >
+                  Yes
+                </button>
+                <button
+                  className={`segment ${editRepeat === "no" ? "active" : ""}`}
+                  onClick={() => this.setState({ editRepeat: "no", isEdited: true })}
+                >
+                  No
+                </button>
+              </div>
             </div>
-            <div className="task-option">
+            <div className="task-option-group">
               <label>Completed:</label>
               <input
                 type="checkbox"
@@ -236,7 +243,7 @@ class Task extends React.Component {
             <BiCollapseAlt
               className="close-icon"
               onClick={async () => {
-                const finalTitle = editTitle.trim() === "" ? "Task" : editTitle; // Default to "Task" if empty
+                const finalTitle = editTitle.trim() === "" ? "Task" : editTitle;
                 const today = new Date().toISOString().split("T")[0];
                 await this.props.updateElement(element._id, {
                   title: finalTitle,

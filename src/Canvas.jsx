@@ -10,7 +10,7 @@ import Audio from "./elements/Audio";
 import Scribble from "./elements/Scribble";
 import SmartSearch from "./SmartSearch";
 import Profile from "./Profile";
-import CatchUp from "./CatchUp";
+// import CatchUp from "./CatchUp";
 import "./assets/SmartSearch.css";
 
 // Icon imports
@@ -163,7 +163,7 @@ const Canvas = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [catchUpOpen, setCatchUpOpen] = useState(false);
+  // const [catchUpOpen, setCatchUpOpen] = useState(false);
   const [selectionMode, setSelectionMode] = useState(false); // State for selection mode
   const [selectedElements, setSelectedElements] = useState([]); // State for selected elements
   const [isSelecting, setIsSelecting] = useState(false); // State for drawing selection rectangle
@@ -550,17 +550,17 @@ const Canvas = () => {
       ) {
         setDropdownOpen(false);
       }
-      if (
-        catchUpOpen &&
-        !event.target.closest(".catchup-expanded") &&
-        !event.target.closest(".time-display")
-      ) {
-        setCatchUpOpen(false);
-      }
+      // if (
+      //   catchUpOpen &&
+      //   !event.target.closest(".catchup-expanded") &&
+      //   !event.target.closest(".time-display")
+      // ) {
+      //   setCatchUpOpen(false);
+      // }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen, profileOpen, dropdownOpen, catchUpOpen]);
+  }, [menuOpen, profileOpen, dropdownOpen]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -950,13 +950,13 @@ const Canvas = () => {
       )}
 
       {/* Catch Up Overlay */}
-      {catchUpOpen && (
+      {/* {catchUpOpen && (
         <CatchUp
           currentTime={currentTime}
           elements={elements}
           onClose={() => setCatchUpOpen(false)}
         />
-      )}
+      )} */}
     </div>
   );
 };

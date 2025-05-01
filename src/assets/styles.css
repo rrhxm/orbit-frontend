@@ -575,7 +575,7 @@ body {
     background: #11111190;
     border-radius: 30px;
     width: 500px;
-    height: 300px;
+    height: 350px;
     color: rgb(255, 255, 255);
     position: relative;
     backdrop-filter: blur(6px);
@@ -606,29 +606,96 @@ body {
     background-color: #424242;
 }
 
-.task-option {
-    display: flex;
-    align-items: center;
+/* Task options grid layout */
+.task-options-grid {
+    display: grid;
+    padding: 20px;
+    grid-template-columns: 1fr 1fr;
+    /* Two columns for side-by-side */
     gap: 10px;
 }
 
-.task-option label {
+.task-option-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.task-option-group label {
     font-size: 14px;
     font-weight: bold;
+    color: #fff;
 }
 
-.task-option input[type="date"],
-.task-option input[type="time"],
-.task-option select {
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 5px;
+/* Date and Time Inputs */
+.task-option-group input[type="date"],
+.task-option-group input[type="time"] {
+    display: flex;
+    align-items: center;
+    background: #ffffff00;
+    color: #ffffff;
+    border: 2px solid rgb(255, 255, 255);
+    border-radius: 10px;
+    font-family: Lexend;
+    padding: 5px 10px;
     font-size: 14px;
+    width: 120px;
+    /* Adjust as needed */
 }
 
-.task-option input[type="checkbox"] {
+/* Segmented Control for Priority and Repeat */
+.segmented-control {
+    display: flex;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.segment {
+    flex: 1;
+    padding: 5px 10px;
+    background: #333;
+    /* Default background */
+    color: #fff;
+    border: none;
+    font-size: 14px;
+    text-align: center;
+    transition: background 0.3s;
+}
+
+.segment.active {
+    background: #fff;
+    /* Active segment background */
+    color: #000;
+    /* Active segment text */
+}
+
+/* Priority Colors */
+.segment:nth-child(1).active {
+    background: #4caf50;
+    color: #fff;
+}
+
+/* Low (Green) */
+.segment:nth-child(2).active {
+    background: #ffca28;
+    color: #000;
+}
+
+/* Medium (Yellow) */
+.segment:nth-child(3).active {
+    background: #f44336;
+    color: #fff;
+}
+
+/* High (Red) */
+
+/* Checkbox */
+.task-option-group input[type="checkbox"] {
     width: 20px;
     height: 20px;
+    
+    accent-color: #ff9900;
+    /* Orange checkmark */
 }
 
 /* Image Component Styles */
@@ -646,7 +713,6 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    /* border: 3px solid rgba(255, 255, 255, 0.435); */
 }
 
 .image-container {
@@ -679,7 +745,6 @@ body {
     color: #ffffff;
     padding-left: 5px;
     padding-right: 5px;
-    /* outline: none; */
     display: block;
     overflow: hidden;
     text-shadow: 2px 2px 5px rgb(0, 0, 0);
@@ -809,10 +874,8 @@ body {
     position: absolute;
     bottom: 20px;
     right: 90px;
-    /* Positioned to the left of .actions (which is at right: 20px, and .actions width is 60px + 10px gap) */
     display: flex;
     width: 30px;
-    /* Smaller width since it only contains one icon */
     height: 30px;
     justify-content: center;
     align-items: center;
@@ -1008,7 +1071,6 @@ body {
     width: 15px;
     height: 15px;
     background: rgb(0, 0, 0);
-    /* Blue dot */
     border-radius: 50px;
 }
 
@@ -1016,7 +1078,6 @@ body {
     width: 15px;
     height: 15px;
     background: rgb(159, 0, 0);
-    /* Blue dot */
     border-radius: 50px;
 }
 
@@ -1056,12 +1117,9 @@ body {
     user-select: none;
     outline: none;
     border: none;
-    /* Remove default border */
     border-radius: 50px;
-    /* Rounded corners for the button */
 }
 
-/* Gradient border using ::before */
 .transcribe-button::before {
     content: '';
     position: absolute;
@@ -1070,11 +1128,8 @@ body {
     right: -2px;
     bottom: -2px;
     background: linear-gradient(45deg, #7400ae, #0329b0, #0089a8, #7400ae);
-    /* Gradient border */
     border-radius: 52px;
-    /* Slightly larger radius to encompass the button */
     z-index: -1;
-    /* Place behind the button */
 }
 
 /* Inner background to cover the gradient inside the border */
@@ -1285,17 +1340,13 @@ body {
 
 .fullscreen-overlay.active {
     background: rgba(0, 0, 0, 0.3);
-    /* Slightly dark background */
     backdrop-filter: blur(30px);
-    /* Apply blur */
     opacity: 1;
-    /* Make visible */
     z-index: 10000;
 }
 
 .center-orbit-logo {
     width: 200px;
-    /* Adjust as needed */
     height: auto;
     user-select: none;
 }
@@ -1372,8 +1423,6 @@ body {
 }
 
 .login-screen {
-    /* background: url("/login-bg.jpeg") no-repeat center center; */
-    /* background: url("/astrobg-login.jpg") no-repeat center center; */
     background: url("/heic1915b.jpg") no-repeat center center;
     background-color: rgba(0, 0, 0, 0.42);
     background-blend-mode: darken;
@@ -1665,7 +1714,6 @@ service cloud.firestore {
     border-radius: 8px !important;
     background: #6d6d6d !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2) !important;
-    triangle: hide;
 }
 
 .colorpicker-wrapper {
@@ -1982,24 +2030,20 @@ service cloud.firestore {
     cursor: crosshair;
 }
 
-/* Wrapper for elements to apply selection styling */
 .element-wrapper {
     position: absolute;
-    /* Ensure elements are positioned absolutely for correct bounding box */
 }
 
 /* Styling for selected elements */
 .element-wrapper.selected {
     border: 2px solid #ffffff;
-    /* Orange border for selected elements */
     box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
 }
 
-/* Selection rectangle styling */
 .selection-rectangle {
     position: absolute;
-    border: 2px dashed #ffffff;
+    border: 1.5px dashed #ffffff;
+    border-radius: 12px;
     background: rgba(255, 255, 255, 0.1);
     pointer-events: none;
-    /* Allow mouse events to pass through */
 }
