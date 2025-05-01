@@ -609,10 +609,12 @@ body {
 /* Task options grid layout */
 .task-options-grid {
     display: grid;
-    padding: 20px;
+    padding: 25px;
+    justify-self: center;
+    align-self: center;
     grid-template-columns: 1fr 1fr;
     /* Two columns for side-by-side */
-    gap: 10px;
+    gap: 20px;
 }
 
 .task-option-group {
@@ -631,71 +633,73 @@ body {
 .task-option-group input[type="date"],
 .task-option-group input[type="time"] {
     display: flex;
-    align-items: center;
     background: #ffffff00;
     color: #ffffff;
-    border: 2px solid rgb(255, 255, 255);
+    border: 1px solid rgb(255, 255, 255);
     border-radius: 10px;
     font-family: Lexend;
-    padding: 5px 10px;
     font-size: 14px;
     width: 120px;
-    /* Adjust as needed */
+    align-items: center;
+    justify-content: center;
+    height: 25px;
+    width: 150px;
 }
 
 /* Segmented Control for Priority and Repeat */
 .segmented-control {
     display: flex;
     border-radius: 10px;
+    border: 1px solid white;
     overflow: hidden;
+    align-items: center;
+    height: 25px;
 }
 
 .segment {
     flex: 1;
     padding: 5px 10px;
-    background: #333;
-    /* Default background */
-    color: #fff;
-    border: none;
+    background: #ffffff00;
+    color: #ffffff;
     font-size: 14px;
     text-align: center;
-    transition: background 0.3s;
+    border-radius: 0px;
 }
 
 .segment.active {
     background: #fff;
-    /* Active segment background */
     color: #000;
-    /* Active segment text */
 }
 
 /* Priority Colors */
 .segment:nth-child(1).active {
-    background: #4caf50;
-    color: #fff;
+    background: #ffffff;
+    color: #00BB57;
+    border-radius: 0px;
 }
 
 /* Low (Green) */
 .segment:nth-child(2).active {
-    background: #ffca28;
-    color: #000;
+    background: #ffffff;
+    color: #FFBB00;
+    border-radius: 0px;
 }
 
 /* Medium (Yellow) */
 .segment:nth-child(3).active {
-    background: #f44336;
-    color: #fff;
+    background: #ffffff;
+    color: #BC0000;
+    border-radius: 0px;
 }
 
 /* High (Red) */
 
 /* Checkbox */
 .task-option-group input[type="checkbox"] {
-    width: 20px;
-    height: 20px;
-    
-    accent-color: #ff9900;
-    /* Orange checkmark */
+    width: 25px;
+    height: 25px;
+    border: none;
+    accent-color: #00BB57;
 }
 
 /* Image Component Styles */
@@ -1423,7 +1427,7 @@ body {
 }
 
 .login-screen {
-    background: url("/heic1915b.jpg") no-repeat center center;
+    background: url("/loginbg.png") no-repeat center center;
     background-color: rgba(0, 0, 0, 0.42);
     background-blend-mode: darken;
     height: 100vh;
@@ -1839,6 +1843,7 @@ service cloud.firestore {
     font-weight: 600;
     transform: translateX(300px);
     border: none;
+    outline: none;
 }
 
 .logout-button {
@@ -2002,25 +2007,6 @@ service cloud.firestore {
     border-radius: 5px;
     margin-bottom: 5px;
     font-size: 14px;
-}
-
-.task-title {
-    flex: 1;
-}
-
-.task-due {
-    color: #ccc;
-    margin-left: 10px;
-}
-
-.priority-high {
-    color: yellow;
-    margin-left: 5px;
-}
-
-.priority-medium {
-    color: yellow;
-    margin-left: 5px;
 }
 
 /* Selection mode styling for the canvas */

@@ -192,41 +192,41 @@ class Task extends React.Component {
             <div className="task-option-group">
               <label>Priority:</label>
               <div className="segmented-control">
-                <button
+                <div
                   className={`segment ${editPriority === "low" ? "active" : ""}`}
                   onClick={() => this.setState({ editPriority: "low", isEdited: true })}
                 >
                   Low
-                </button>
-                <button
+                </div>
+                <div
                   className={`segment ${editPriority === "medium" ? "active" : ""}`}
                   onClick={() => this.setState({ editPriority: "medium", isEdited: true })}
                 >
                   Medium
-                </button>
-                <button
+                </div>
+                <div
                   className={`segment ${editPriority === "high" ? "active" : ""}`}
                   onClick={() => this.setState({ editPriority: "high", isEdited: true })}
                 >
                   High
-                </button>
+                </div>
               </div>
             </div>
             <div className="task-option-group">
               <label>Repeat Daily:</label>
               <div className="segmented-control">
-                <button
+                <div
                   className={`segment ${editRepeat === "yes" ? "active" : ""}`}
                   onClick={() => this.setState({ editRepeat: "yes", isEdited: true })}
                 >
                   Yes
-                </button>
-                <button
+                </div>
+                <div
                   className={`segment ${editRepeat === "no" ? "active" : ""}`}
                   onClick={() => this.setState({ editRepeat: "no", isEdited: true })}
                 >
                   No
-                </button>
+                </div>
               </div>
             </div>
             <div className="task-option-group">
