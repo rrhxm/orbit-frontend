@@ -41,7 +41,7 @@ export default function Auth() {
         <button className="google-signin" onClick={signInWithGoogle}>
           Sign in with Google
         </button>
-        <input className="user-cred"
+        {/* <input className="user-cred"
           type="email"
           placeholder="Email"
           value={email}
@@ -58,7 +58,7 @@ export default function Auth() {
           </button>
           <button className="register" onClick={() => registerWithEmail(email, password)}>
             Register
-          </button>
+          </button> */}
       </div>
     </div>
       )}
