@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { auth, signInWithGoogle, registerWithEmail, loginWithEmail, logout } from "./auth";
 import { onAuthStateChanged } from "firebase/auth";
 import "./assets/styles.css";
+import { FcGoogle } from "react-icons/fc";
+
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -39,7 +41,8 @@ export default function Auth() {
       <div className="login-tab">
         <h2 className="login-head">Sign In</h2>
         <button className="google-signin" onClick={signInWithGoogle}>
-          Sign in with Google
+        <FcGoogle />
+        Sign in with Google
         </button>
         {/* <input className="user-cred"
           type="email"

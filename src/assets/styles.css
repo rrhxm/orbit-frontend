@@ -1441,17 +1441,15 @@ body {
 
 .login-tab {
     background-color: #ffffff00;
-    height: 400px;
+    height: 300px;
     width: 400px;
     border-radius: 30px;
     right: 15%;
-    align-items: center;
     position: absolute;
     display: grid;
     z-index: 3000;
     align-items: center;
     justify-items: center;
-    padding: 20px;
     backdrop-filter: blur(7px);
     gap: 5px;
     border: 1px solid #ffffff93;
@@ -1465,12 +1463,16 @@ body {
 }
 
 .google-signin {
-    background-color: #a50000;
+    background-color: #ffffff;
     position: relative;
     width: 170px;
+    color:#000;
     height: 40px;
+    bottom:50%;
     font-size: small;
     border-radius: 60px;
+    align-self: center;
+    justify-self: center;
     outline: none;
     border: none;
 }
@@ -1480,7 +1482,6 @@ body {
     height: 40px;
     border-radius: 13px;
     border: 2px solid #ffffff93;
-    /* padding: 20px; */
     padding-left: 20px;
     background-color: #000000a5;
     outline: none;
