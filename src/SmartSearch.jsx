@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import Note from "./elements/Note";
 import Task from "./elements/Task";
 import Image from "./elements/Image";
@@ -7,7 +7,9 @@ import Scribble from "./elements/Scribble";
 import axios from "axios";
 import "./assets/SmartSearch.css";
 import { IoSearch } from "react-icons/io5";
+import { IoIosReturnLeft } from "react-icons/io";
 
+// SmartSearch component for searching elements
 const SmartSearch = ({
     elements,
     onNavigate,
@@ -25,22 +27,13 @@ const SmartSearch = ({
     const [errorMessage, setErrorMessage] = useState(null);
     const [resultCount, setResultCount] = useState(0);
 
-    // Debounce function
-    const debounce = (func, delay) => {
-        let timeoutId;
-        return (...args) => {
-            clearTimeout(timeoutId);
-            timeoutId = setTimeout(() => func(...args), delay);
-        };
-    };
-
-    // Preprocess search query
+    // Preprocess the search query by trimming and converting to lowercase
     const preprocessQuery = (query) => {
         return query.trim().toLowerCase();
     };
 
-    // Normal search (keyword-based)
-    useEffect(() => {
+    // Handle search when the button is clicked
+    const handleSearch = async () => {
         if (searchQuery.trim() === "") {
             setSearchResults([]);
             setErrorMessage(null);
@@ -48,88 +41,78 @@ const SmartSearch = ({
             return;
         }
 
-        const fetchSearchResults = async () => {
-            setIsLoading(true);
-            setErrorMessage(null);
-            setResultCount(0);
+        setIsLoading(true);
+        setErrorMessage(null);
+        setResultCount(0);
 
-            try {
-                const processedQuery = preprocessQuery(searchQuery);
-                const response = await axios.get("/search", {
-                    params: {
-                        user_id: userId,
-                        query: processedQuery,
-                    },
+        try {
+            const processedQuery = preprocessQuery(searchQuery);
+            const response = await axios.get("/search", {
+                params: {
+                    user_id: userId,
+                    query: processedQuery,
+                },
+            });
+
+            // Validate response format
+            if (!Array.isArray(response.data)) {
+                throw new Error("Unexpected response format: results should be an array");
+            }
+
+            // Filter results client-side to match the query in title, content, or transcription
+            const filteredResults = response.data
+                .filter((el) => {
+                    if (!el || !el.type) return false;
+                    const titleMatch = el.title?.toLowerCase().includes(processedQuery);
+                    const contentMatch = el.content?.toLowerCase().includes(processedQuery);
+                    const transcriptionMatch = el.transcription?.toLowerCase().includes(processedQuery);
+                    return titleMatch || contentMatch || transcriptionMatch;
+                })
+                .sort((a, b) => {
+                    // Sort by title match priority
+                    const aTitleMatch = a.title?.toLowerCase().includes(processedQuery);
+                    const bTitleMatch = b.title?.toLowerCase().includes(processedQuery);
+                    if (aTitleMatch && !bTitleMatch) return -1;
+                    if (!aTitleMatch && bTitleMatch) return 1;
+                    return 0;
                 });
 
-                // Validate response
-                if (!Array.isArray(response.data)) {
-                    throw new Error("Unexpected response format: results should be an array");
-                }
+            setSearchResults(filteredResults);
+            setResultCount(filteredResults.length);
+        } catch (error) {
+            console.error("Error fetching search results:", error);
+            setSearchResults([]);
+            setResultCount(0);
+            setErrorMessage(
+                error.response?.data?.detail || "Failed to fetch search results. Please try again."
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-                // Log response for debugging
-                console.log("Search query:", processedQuery);
-                console.log("Search response:", response.data);
-
-                // Client-side filtering and sorting
-                const filteredResults = response.data
-                    .filter((el) => {
-                        // Ensure element has necessary fields
-                        if (!el || !el.type) return false;
-                        const titleMatch = el.title?.toLowerCase().includes(processedQuery);
-                        const contentMatch = el.content?.toLowerCase().includes(processedQuery);
-                        const transcriptionMatch = el.transcription?.toLowerCase().includes(processedQuery);
-                        return titleMatch || contentMatch || transcriptionMatch;
-                    })
-                    .sort((a, b) => {
-                        // Prioritize title matches, then content/transcription matches
-                        const aTitleMatch = a.title?.toLowerCase().includes(processedQuery);
-                        const bTitleMatch = b.title?.toLowerCase().includes(processedQuery);
-                        if (aTitleMatch && !bTitleMatch) return -1;
-                        if (!aTitleMatch && bTitleMatch) return 1;
-                        // If both have title matches or neither do, sort by similarity if available
-                        return (b.similarity || 0) - (a.similarity || 0);
-                    });
-
-                setSearchResults(filteredResults);
-                setResultCount(filteredResults.length);
-            } catch (error) {
-                console.error("Error fetching search results:", error);
-                setSearchResults([]);
-                setResultCount(0);
-                setErrorMessage(
-                    error.response?.data?.detail || "Failed to fetch search results. Please try again."
-                );
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        const debouncedFetch = debounce(fetchSearchResults, 500);
-        debouncedFetch();
-    }, [searchQuery, userId]);
-
-    // Highlight matched text
+    // Highlight matched text in search results
     const highlightText = (text, query) => {
         if (!text || !query) return text;
         const regex = new RegExp(`(${query})`, "gi");
         return text.replace(regex, "<span class='highlight'>$1</span>");
     };
 
+    // Render a single search result element
     const renderElement = (el) => {
         const commonProps = {
             element: el,
             isEditing: false,
             onDoubleClick: () => onDoubleClick(el),
-            onDragStart: () => {},
-            onDragEnd: () => {},
+            onDragStart: () => { },
+            onDragEnd: () => { },
             updateElement,
             deleteElement,
             onClose: () => setEditingElement(null),
             userId,
         };
 
-        // Determine matched field for snippet
+        // Determine which field matched for the snippet
         const processedQuery = preprocessQuery(searchQuery);
         let snippet = "";
         if (el.title?.toLowerCase().includes(processedQuery)) {
@@ -159,13 +142,15 @@ const SmartSearch = ({
                         }}
                     />
                 )} */}
-                {el.similarity && (
-                    <div className="similarity-score">
-                        Relevance: {(el.similarity * 100).toFixed(2)}%
-                    </div>
-                )}
             </div>
         );
+    };
+
+    // Handle Enter key to trigger search
+    const handleKeyPress = (e) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
     };
 
     if (!isVisible) return null;
@@ -179,9 +164,13 @@ const SmartSearch = ({
                         type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
+                        onKeyPress={handleKeyPress}
                         placeholder="Search notes, tasks, audio..."
                         className="search-input"
                     />
+                    <button onClick={handleSearch} className="search-button">
+                        <IoIosReturnLeft className="search-button-icon" />
+                    </button>
                 </div>
 
                 <div className="search-results">
@@ -201,11 +190,6 @@ const SmartSearch = ({
                         </div>
                     ) : (
                         <div className="search-results-content">
-                            {/* {resultCount > 0 && (
-                                // <div className="result-count">
-                                //     Found {resultCount} result{resultCount !== 1 ? "s" : ""}
-                                // </div>
-                            )} */}
                             <div className="search-results-list">
                                 {searchResults.length > 0 ? (
                                     searchResults.map((el) => (

@@ -10,7 +10,7 @@ import Audio from "./elements/Audio";
 import Scribble from "./elements/Scribble";
 import SmartSearch from "./SmartSearch";
 import Profile from "./Profile";
-import CatchUp from "./Catchup"; // Import the new CatchUp component
+import CatchUp from "./CatchUp";
 import "./assets/SmartSearch.css";
 
 // Icon imports
@@ -163,7 +163,11 @@ const Canvas = () => {
   const [showOverlay, setShowOverlay] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [catchUpOpen, setCatchUpOpen] = useState(false); // New state for Catch Up overlay
+  const [catchUpOpen, setCatchUpOpen] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false); // State for selection mode
+  const [selectedElements, setSelectedElements] = useState([]); // State for selected elements
+  const [isSelecting, setIsSelecting] = useState(false); // State for drawing selection rectangle
+  const [selectionRect, setSelectionRect] = useState({ startX: 0, startY: 0, endX: 0, endY: 0 }); // Selection rectangle coordinates
   const [canvasWidth, setCanvasWidth] = useState(() => {
     // Initialize canvas width from localStorage or default to 2 * screen width
     const savedWidth = localStorage.getItem(`canvasWidth-${user?.uid}`);
@@ -187,7 +191,7 @@ const Canvas = () => {
   // Initialize the base Element class
   const elementHandler = new Element(setElements);
 
-  // Define formatCurrentDate function
+  // Format date for new element titles
   const formatCurrentDate = () => {
     const date = new Date();
     return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -200,7 +204,6 @@ const Canvas = () => {
       const userId = user.uid;
       const cacheKey = `${userId}-page-${page}`;
       if (elementCache.current.has(cacheKey)) {
-        console.log("Loading elements from cache:", cacheKey);
         setElements((prev) => [...prev, ...elementCache.current.get(cacheKey)]);
         return;
       }
@@ -227,14 +230,14 @@ const Canvas = () => {
     }
   }, [user, page, hasMore]);
 
-  // Persist canvas width in localStorage whenever it changes
+  // Persist canvas width in localStorage
   useEffect(() => {
     if (user) {
       localStorage.setItem(`canvasWidth-${user.uid}`, canvasWidth.toString());
     }
   }, [canvasWidth, user]);
 
-  // Handle drag start for elements
+  // Handle drag start for elements (single or multi-select)
   const handleDragStart = (event, elementId) => {
     const rect = event.target.getBoundingClientRect();
     setDragOffset({
@@ -244,7 +247,7 @@ const Canvas = () => {
     setDraggingElement(elementId);
   };
 
-  // Handle drag end for elements
+  // Handle drag end for elements (single or multi-select)
   const handleDragEnd = useCallback(
     async (event, elementId) => {
       event.preventDefault();
@@ -256,11 +259,10 @@ const Canvas = () => {
       const screenWidth = window.innerWidth;
       const expansionThreshold = 100;
 
-      // Check if the element is near the right edge
+      // Check if the dragged element is near the right edge
       if (newX + expansionThreshold > canvasWidth - expansionThreshold) {
         setCanvasWidth((prevWidth) => {
           const newWidth = prevWidth + screenWidth;
-          // Recenter the canvas to the new element position after expansion
           requestAnimationFrame(() => {
             const centerX = newX - screenWidth / 2;
             canvas.scrollTo({
@@ -271,7 +273,6 @@ const Canvas = () => {
           return newWidth;
         });
       } else {
-        // Recenter the canvas if the element is within the current viewport
         const scrollX = newX - screenWidth / 2;
         if (scrollX >= 0 && scrollX < canvasWidth - screenWidth) {
           requestAnimationFrame(() => {
@@ -283,23 +284,62 @@ const Canvas = () => {
         }
       }
 
-      // Update the element's position
-      setElements((prev) =>
-        prev.map((el) =>
-          el._id === elementId ? { ...el, x: newX, y: newY } : el
-        )
-      );
+      // If there are selected elements, move all of them
+      if (selectedElements.length > 0) {
+        const draggedElement = elements.find((el) => el._id === elementId);
+        if (!draggedElement) return;
 
-      try {
-        const original = elements.find((el) => el._id === elementId);
-        await elementHandler.updateElement(elementId, { x: newX, y: newY }, user.uid, original, null);
-      } catch (error) {
-        console.error("Error updating element position:", error);
-        const original = elements.find((el) => el._id === elementId);
-        if (original) setElements((prev) => prev.map((el) => (el._id === elementId ? original : el)));
+        const deltaX = newX - draggedElement.x;
+        const deltaY = newY - draggedElement.y;
+
+        const updatedElements = elements.map((el) => {
+          if (selectedElements.includes(el._id)) {
+            const updatedX = Math.round(el.x + deltaX);
+            const updatedY = Math.round(el.y + deltaY);
+            return { ...el, x: updatedX, y: updatedY };
+          }
+          return el;
+        });
+
+        setElements(updatedElements);
+
+        // Update each selected element's position on the server
+        try {
+          for (const elId of selectedElements) {
+            const el = updatedElements.find((e) => e._id === elId);
+            const original = elements.find((e) => e._id === elId);
+            await elementHandler.updateElement(elId, { x: el.x, y: el.y }, user.uid, original, null);
+          }
+        } catch (error) {
+          console.error("Error updating selected elements:", error);
+          setElements(elements); // Revert on error
+        }
+
+        // Exit selection mode after dragging
+        setSelectionMode(false);
+        setSelectedElements([]);
+        setIsSelecting(false);
+      } else {
+        // Single element drag
+        setElements((prev) =>
+          prev.map((el) =>
+            el._id === elementId ? { ...el, x: newX, y: newY } : el
+          )
+        );
+
+        try {
+          const original = elements.find((el) => el._id === elementId);
+          await elementHandler.updateElement(elementId, { x: newX, y: newY }, user.uid, original, null);
+        } catch (error) {
+          console.error("Error updating element position:", error);
+          const original = elements.find((el) => el._id === elementId);
+          if (original) setElements((prev) => prev.map((el) => (el._id === elementId ? original : el)));
+        }
       }
+
+      setDraggingElement(null);
     },
-    [canvasWidth, dragOffset, user.uid, elements]
+    [canvasWidth, dragOffset, user.uid, elements, selectedElements]
   );
 
   // Handle drop for new elements
@@ -384,6 +424,82 @@ const Canvas = () => {
   const handleDoubleClick = useCallback((element) => {
     setEditingElement(element);
   }, []);
+
+  // Handle double-click on canvas to toggle selection mode
+  const handleCanvasDoubleClick = (event) => {
+    const canvas = canvasRef.current;
+    const isCanvasClick = event.target === canvas && !canvas.contains(event.target.closest('.element-wrapper')) && !canvas.contains(event.target.closest('.fullscreen-overlay'));
+
+    if (isCanvasClick) {
+      if (selectionMode) {
+        // Exit selection mode and clear selected elements
+        setSelectionMode(false);
+        setSelectedElements([]);
+        setIsSelecting(false);
+      } else {
+        // Enter selection mode
+        setSelectionMode(true);
+        setSelectedElements([]);
+      }
+    }
+  };
+
+  // Start drawing the selection rectangle
+  const handleMouseDown = (event) => {
+    if (!selectionMode) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const startX = event.clientX - rect.left;
+    const startY = event.clientY - rect.top;
+
+    setSelectionRect({ startX, startY, endX: startX, endY: startY });
+    setIsSelecting(true);
+  };
+
+  // Update the selection rectangle while dragging
+  const handleMouseMove = (event) => {
+    if (!isSelecting) return;
+
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const endX = event.clientX - rect.left;
+    const endY = event.clientY - rect.top;
+
+    setSelectionRect((prev) => ({ ...prev, endX, endY }));
+  };
+
+  // Select elements within the rectangle on mouse up
+  const handleMouseUp = () => {
+    if (!isSelecting) return;
+
+    setIsSelecting(false);
+
+    const { startX, startY, endX, endY } = selectionRect;
+    const minX = Math.min(startX, endX);
+    const maxX = Math.max(startX, endX);
+    const minY = Math.min(startY, endY);
+    const maxY = Math.max(startY, endY);
+
+    // Select elements within the rectangle
+    const selected = elements
+      .filter((el) => {
+        const elX = el.x;
+        const elY = el.y;
+        // Assume elements are roughly 200x200 for simplicity; adjust based on actual sizes if needed
+        const elWidth = 200;
+        const elHeight = 200;
+        return (
+          elX + elWidth >= minX &&
+          elX <= maxX &&
+          elY + elHeight >= minY &&
+          elY <= maxY
+        );
+      })
+      .map((el) => el._id);
+
+    setSelectedElements(selected);
+  };
 
   // Navigate to an element's location on the canvas
   const handleNavigate = useCallback((x, y) => {
@@ -603,7 +719,8 @@ const Canvas = () => {
         </div>
 
         <div className="toolbar-center">
-          <div className="time-display" onClick={() => setCatchUpOpen(true)}>
+          <div className="time-display" >
+          {/* <div className="time-display" onClick={() => setCatchUpOpen(true)}> */}
             {formattedTime}
             <span className={`status-dot ${elements.length > 0 ? "green" : "red"}`}></span>
           </div>
@@ -632,113 +749,151 @@ const Canvas = () => {
       <div
         ref={canvasRef}
         id="canvas"
-        className="canvas"
+        className={`canvas ${selectionMode ? "selection-mode" : ""}`}
         style={{ width: `${canvasWidth}px` }}
+        onDoubleClick={handleCanvasDoubleClick}
+        onMouseDown={handleMouseDown}
+        onMouseMove={handleMouseMove}
+        onMouseUp={handleMouseUp}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
         {Array.isArray(elements) &&
           elements.map((el) => {
+            const isSelected = selectedElements.includes(el._id);
             if (el.type === "note") {
               return (
-                <Note
+                <div
                   key={el._id}
-                  element={el}
-                  isEditing={editingElement && editingElement._id === el._id}
-                  onDoubleClick={handleDoubleClick}
-                  onDragStart={(event) => handleDragStart(event, el._id)}
-                  onDragEnd={(event) => handleDragEnd(event, el._id)}
-                  updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid, el, null)
-                  }
-                  deleteElement={(id) =>
-                    elementHandler.deleteElement(id, user.uid, showNotification)
-                  }
-                  onClose={() => setEditingElement(null)}
-                  userId={user.uid}
-                />
+                  className={`element-wrapper ${isSelected ? "selected" : ""}`}
+                >
+                  <Note
+                    element={el}
+                    isEditing={editingElement && editingElement._id === el._id}
+                    onDoubleClick={handleDoubleClick}
+                    onDragStart={(event) => handleDragStart(event, el._id)}
+                    onDragEnd={(event) => handleDragEnd(event, el._id)}
+                    updateElement={(id, updatedData) =>
+                      elementHandler.updateElement(id, updatedData, user.uid, el, null)
+                    }
+                    deleteElement={(id) =>
+                      elementHandler.deleteElement(id, user.uid, showNotification)
+                    }
+                    onClose={() => setEditingElement(null)}
+                    userId={user.uid}
+                  />
+                </div>
               );
             } else if (el.type === "task") {
               return (
-                <Task
+                <div
                   key={el._id}
-                  element={el}
-                  isEditing={editingElement && editingElement._id === el._id}
-                  onDoubleClick={handleDoubleClick}
-                  onDragStart={(event) => handleDragStart(event, el._id)}
-                  onDragEnd={(event) => handleDragEnd(event, el._id)}
-                  updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid, el, null)
-                  }
-                  deleteElement={(id) =>
-                    elementHandler.deleteElement(id, user.uid, showNotification)
-                  }
-                  onClose={() => setEditingElement(null)}
-                  userId={user.uid}
-                />
+                  className={`element-wrapper ${isSelected ? "selected" : ""}`}
+                >
+                  <Task
+                    element={el}
+                    isEditing={editingElement && editingElement._id === el._id}
+                    onDoubleClick={handleDoubleClick}
+                    onDragStart={(event) => handleDragStart(event, el._id)}
+                    onDragEnd={(event) => handleDragEnd(event, el._id)}
+                    updateElement={(id, updatedData) =>
+                      elementHandler.updateElement(id, updatedData, user.uid, el, null)
+                    }
+                    deleteElement={(id) =>
+                      elementHandler.deleteElement(id, user.uid, showNotification)
+                    }
+                    onClose={() => setEditingElement(null)}
+                    userId={user.uid}
+                  />
+                </div>
               );
             } else if (el.type === "image") {
               return (
-                <Image
+                <div
                   key={el._id}
-                  element={el}
-                  isEditing={editingElement && editingElement._id === el._id}
-                  onDoubleClick={handleDoubleClick}
-                  onDragStart={(event) => handleDragStart(event, el._id)}
-                  onDragEnd={(event) => handleDragEnd(event, el._id)}
-                  updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid, el, handleUpdate)
-                  }
-                  deleteElement={(id) =>
-                    elementHandler.deleteElement(id, user.uid, showNotification)
-                  }
-                  onClose={() => setEditingElement(null)}
-                  onUpdate={handleUpdate}
-                  userId={user.uid}
-                />
+                  className={`element-wrapper ${isSelected ? "selected" : ""}`}
+                >
+                  <Image
+                    element={el}
+                    isEditing={editingElement && editingElement._id === el._id}
+                    onDoubleClick={handleDoubleClick}
+                    onDragStart={(event) => handleDragStart(event, el._id)}
+                    onDragEnd={(event) => handleDragEnd(event, el._id)}
+                    updateElement={(id, updatedData) =>
+                      elementHandler.updateElement(id, updatedData, user.uid, el, handleUpdate)
+                    }
+                    deleteElement={(id) =>
+                      elementHandler.deleteElement(id, user.uid, showNotification)
+                    }
+                    onClose={() => setEditingElement(null)}
+                    onUpdate={handleUpdate}
+                    userId={user.uid}
+                  />
+                </div>
               );
             } else if (el.type === "audio") {
               return (
-                <Audio
+                <div
                   key={el._id}
-                  element={el}
-                  isEditing={editingElement && editingElement._id === el._id}
-                  onDoubleClick={handleDoubleClick}
-                  onDragStart={(event) => handleDragStart(event, el._id)}
-                  onDragEnd={(event) => handleDragEnd(event, el._id)}
-                  updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid, el, handleUpdate)
-                  }
-                  deleteElement={(id) =>
-                    elementHandler.deleteElement(id, user.uid, showNotification)
-                  }
-                  onClose={() => setEditingElement(null)}
-                  onUpdate={handleUpdate}
-                  userId={user.uid}
-                />
+                  className={`element-wrapper ${isSelected ? "selected" : ""}`}
+                >
+                  <Audio
+                    element={el}
+                    isEditing={editingElement && editingElement._id === el._id}
+                    onDoubleClick={handleDoubleClick}
+                    onDragStart={(event) => handleDragStart(event, el._id)}
+                    onDragEnd={(event) => handleDragEnd(event, el._id)}
+                    updateElement={(id, updatedData) =>
+                      elementHandler.updateElement(id, updatedData, user.uid, el, handleUpdate)
+                    }
+                    deleteElement={(id) =>
+                      elementHandler.deleteElement(id, user.uid, showNotification)
+                    }
+                    onClose={() => setEditingElement(null)}
+                    onUpdate={handleUpdate}
+                    userId={user.uid}
+                  />
+                </div>
               );
             } else if (el.type === "scribble") {
               return (
-                <Scribble
+                <div
                   key={el._id}
-                  element={el}
-                  isEditing={editingElement && String(editingElement._id) === String(el._id)}
-                  onDoubleClick={() => handleDoubleClick(el)}
-                  onDragStart={(event) => handleDragStart(event, el._id)}
-                  onDragEnd={(event) => handleDragEnd(event, el._id)}
-                  updateElement={(id, updatedData) =>
-                    elementHandler.updateElement(id, updatedData, user.uid, el, null)
-                  }
-                  deleteElement={(id) =>
-                    elementHandler.deleteElement(id, user.uid, showNotification)
-                  }
-                  onClose={() => setEditingElement(null)}
-                  userId={user.uid}
-                />
+                  className={`element-wrapper ${isSelected ? "selected" : ""}`}
+                >
+                  <Scribble
+                    element={el}
+                    isEditing={editingElement && String(editingElement._id) === String(el._id)}
+                    onDoubleClick={() => handleDoubleClick(el)}
+                    onDragStart={(event) => handleDragStart(event, el._id)}
+                    onDragEnd={(event) => handleDragEnd(event, el._id)}
+                    updateElement={(id, updatedData) =>
+                      elementHandler.updateElement(id, updatedData, user.uid, el, null)
+                    }
+                    deleteElement={(id) =>
+                      elementHandler.deleteElement(id, user.uid, showNotification)
+                    }
+                    onClose={() => setEditingElement(null)}
+                    userId={user.uid}
+                  />
+                </div>
               );
             }
             return null;
           })}
+
+        {/* Selection Rectangle */}
+        {isSelecting && (
+          <div
+            className="selection-rectangle"
+            style={{
+              left: Math.min(selectionRect.startX, selectionRect.endX),
+              top: Math.min(selectionRect.startY, selectionRect.endY),
+              width: Math.abs(selectionRect.endX - selectionRect.startX),
+              height: Math.abs(selectionRect.endY - selectionRect.startY),
+            }}
+          />
+        )}
       </div>
 
       <div className="app-version" onClick={toggleOverlay}>

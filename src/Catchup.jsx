@@ -10,38 +10,74 @@ const CatchUp = ({ currentTime, elements, onClose }) => {
 
     const formatTime = () => {
         return currentTime.toLocaleTimeString([], {
-            hour: "numeric",
+            hour: "2-digit",
             minute: "2-digit",
-            hour12: true,
+            hour12: false,
         });
     };
 
-    const formatDay = () => {
-        return currentTime.toLocaleDateString("en-US", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-        });
+    const formatDayAndDate = () => {
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        const day = days[currentTime.getDay()];
+        const nextDay = days[(currentTime.getDay() + 1) % 7];
+        const nextDate = new Date(currentTime);
+        nextDate.setDate(currentTime.getDate() + 1);
+        return `${day} ${nextDay} ${nextDate.getDate()}`;
     };
 
-    const getUpcomingTasks = () => {
-        const tasks = elements
-            .filter((el) => el.type === "task" && !el.completed)
-            .sort((a, b) => {
-                const dateA = new Date(`${a.due_date} ${a.due_time}`);
-                const dateB = new Date(`${b.due_date} ${b.due_time}`);
-                return dateA - dateB;
-            });
-        return tasks.slice(0, 2).map((task, index) => (
-            <div key={index} className="catchup-task">
-                <span className="task-title">{task.title || "Untitled Task"}</span>
-                {task.due_date && task.due_time ? (
-                    <span className="task-due"> Due {task.due_date}, {task.due_time}</span>
-                ) : null}
-                {task.priority === "high" && <span className="priority-high">!!</span>}
-                {task.priority === "medium" && <span className="priority-medium">!</span>}
+    const generateCalendar = () => {
+        const year = currentTime.getFullYear();
+        const month = currentTime.getMonth();
+        const today = currentTime.getDate();
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const monthName = currentTime.toLocaleString("default", { month: "long" }).toUpperCase();
+
+        const daysOfWeek = ["M", "T", "W", "T", "F", "S", "S"];
+        const weeks = [];
+        let currentWeek = [];
+
+        // Add empty slots for days before the 1st
+        for (let i = 0; i < firstDay; i++) {
+            currentWeek.push(<span key={`empty-start-${i}`} className="calendar-day empty"></span>);
+        }
+
+        // Add days of the month
+        for (let day = 1; day <= daysInMonth; day++) {
+            currentWeek.push(
+                <span
+                    key={day}
+                    className={`calendar-day ${day === today ? "today" : ""}`}
+                >
+                    {day}
+                </span>
+            );
+
+            if (currentWeek.length === 7 || day === daysInMonth) {
+                // Fill the rest of the week with empty slots if needed
+                while (currentWeek.length < 7) {
+                    currentWeek.push(<span key={`empty-end-${currentWeek.length}`} className="calendar-day empty"></span>);
+                }
+                weeks.push(
+                    <div key={weeks.length} className="calendar-week">
+                        {currentWeek}
+                    </div>
+                );
+                currentWeek = [];
+            }
+        }
+
+        return (
+            <div className="calendar-container">
+                <div className="calendar-header">{monthName}</div>
+                <div className="calendar-days-of-week">
+                    {daysOfWeek.map((day, index) => (
+                        <span key={index} className="calendar-day-of-week">{day}</span>
+                    ))}
+                </div>
+                {weeks}
             </div>
-        ));
+        );
     };
 
     const fetchWeather = async () => {
@@ -65,47 +101,24 @@ const CatchUp = ({ currentTime, elements, onClose }) => {
         }
     };
 
-    const generateCalendar = () => {
-        const year = currentTime.getFullYear();
-        const month = currentTime.getMonth();
-        const today = currentTime.getDate();
-        const firstDay = new Date(year, month, 1).getDay();
-        const daysInMonth = new Date(year, month + 1, 0).getDate();
-        const monthName = currentTime.toLocaleString("default", { month: "long" }).toUpperCase();
-
-        const daysOfWeek = ["M", "T", "W", "T", "F", "S", "S"];
-        const days = [];
-
-        // Add empty slots for days before the 1st
-        for (let i = 0; i < firstDay; i++) {
-            days.push(<span key={`empty-${i}`} className="calendar-day empty"></span>);
-        }
-
-        // Add days of the month
-        for (let day = 1; day <= daysInMonth; day++) {
-            days.push(
-                <span
-                    key={day}
-                    className={`calendar-day ${day === today ? "today" : ""}`}
-                >
-                    {day}
-                </span>
-            );
-        }
-
-        return (
-            <>
-                <div className="calendar-header">{monthName}</div>
-                <div className="calendar-days-of-week">
-                    {daysOfWeek.map((day, index) => (
-                        <span key={index} className="calendar-day-of-week">
-                            {day}
-                        </span>
-                    ))}
-                </div>
-                <div className="calendar-days">{days}</div>
-            </>
-        );
+    const getUpcomingTasks = () => {
+        const tasks = elements
+            .filter((el) => el.type === "task" && !el.completed)
+            .sort((a, b) => {
+                const dateA = new Date(`${a.due_date} ${a.due_time}`);
+                const dateB = new Date(`${b.due_date} ${b.due_time}`);
+                return dateA - dateB;
+            });
+        return tasks.slice(0, 2).map((task, index) => (
+            <div key={index} className="catchup-task">
+                <span className="task-title">{task.title || "Untitled Task"}</span>
+                {task.due_date && task.due_time ? (
+                    <span className="task-due"> Due {task.due_date}, {task.due_time}</span>
+                ) : null}
+                {task.priority === "high" && <span className="priority-high">!!</span>}
+                {task.priority === "medium" && <span className="priority-medium">!</span>}
+            </div>
+        ));
     };
 
     useEffect(() => {
@@ -117,9 +130,11 @@ const CatchUp = ({ currentTime, elements, onClose }) => {
             <div className="catchup-expanded" onClick={(e) => e.stopPropagation()}>
                 <h2>Hello Rhythm!</h2>
                 <div className="catchup-content">
-                    <div className="catchup-time">{formatTime()}</div>
-                    <div className="catchup-day">{formatDay()}</div>
-                    <div className="catchup-calendar">{generateCalendar()}</div>
+                    <div className="catchup-time-and-day">
+                        <div className="catchup-time">{formatTime()}</div>
+                        <div className="catchup-day">{formatDayAndDate()}</div>
+                        <div className="catchup-calendar">{generateCalendar()}</div>
+                    </div>
                     <div className="catchup-weather">
                         {weather.location} {weather.temperature} {weather.condition}
                     </div>

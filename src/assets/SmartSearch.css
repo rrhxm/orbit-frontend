@@ -13,18 +13,20 @@
     z-index: 3500;
     isolation: isolate;
 }
-.smart-search-section{
+
+.smart-search-section {
     background: #11111190;
     border-radius: 20px;
     position: fixed;
     top: 20px;
     width: 600px;
-    min-height:400px;
+    min-height: 400px;
     backdrop-filter: blur(6px);
     isolation: isolate;
     border: 2px solid rgb(66, 66, 66);
     padding-top: 25px;
 }
+
 .search-bar {
     width: 550px;
     height: 40px;
@@ -61,14 +63,15 @@
     transition: opacity 0.4s ease-in-out;
 }
 
-.loading{
+.loading {
     align-items: center;
     justify-self: center;
     padding: 20px;
     color: #6a6a6a;
 }
+
 .search-results {
-    width:546px;
+    width: 546px;
     border-radius: 15px;
     scrollbar-width: none;
     max-height: 400px;
@@ -115,77 +118,35 @@
     cursor: url("/cursor.cur"), auto;
 }
 
-.smart-search-button{
-    background: #ffffff;
+.search-button {
+    background: #343333;
+    border: none;
     height: 40px;
     width: 40px;
-    font-size: 25px;
+    cursor: url("/cursor.cur"), auto;
+    border-radius: 15px;
+    display: flex;
+    padding: 1px;
+    font-size: larger;
+    align-items: center;
+    border: none;
     outline: none;
     justify-content: center;
-    align-items: center;
-    border-radius: 15px;
-    padding: 7px;
-    border: none;
-    color: #181818;
-}
-.smart-search-button:hover {
-    background: #7731d8;
-    outline: none;
-    border: none;
-    color: #ffffff;
 }
 
-.search-results-content{
+.search-button-icon {
+    color: #fff;
+}
+
+.search-results-content {
     width: 550px;
     height: auto;
-    background-color: #d1090900;  
+    background-color: #d1090900;
     text-align: left;
     color: rgb(255, 255, 255);
     font-size: 14px;
     font-family: Lexend;
     outline: none;
-    user-select:text;
+    user-select: text;
     border-radius: 15px;
-}
-
-.smart-search-answer{
-    text-align: left;
-    color: rgb(255, 255, 255);
-    font-size: 14px;
-    font-family: Lexend;
-    outline: none;
-    white-space: normal;
-    word-wrap: break-word;
-    line-height: 1.5;
-    user-select:text;
-}
-
-.loading .shimmer {
-    padding: 0 20px;
-}
-
-.shimmer .shimmer-line {
-    background: linear-gradient(90deg, #333 25%, #444 50%, #333 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    height: 20px;
-    border-radius: 5px;
-    margin-bottom: 10px;
-}
-
-.shimmer .shimmer-line:nth-child(2) {
-    width: 80%;
-}
-
-.shimmer .shimmer-line:nth-child(3) {
-    width: 60%;
-}
-
-@keyframes shimmer {
-    0% {
-        background-position: 200% 0;
-    }
-    100% {
-        background-position: -200% 0;
-    }
 }

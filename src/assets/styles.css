@@ -1842,33 +1842,44 @@ service cloud.firestore {
     gap: 10px;
 }
 
-.catchup-time,
-.catchup-day,
-.catchup-weather,
-.catchup-tasks {
-    padding: 10px 15px;
-    background: #2a2a2a;
-    border-radius: 8px;
-    font-size: 16px;
+.catchup-time-and-day {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
 }
 
 .catchup-time {
-    font-size: 20px;
+    font-size: 36px;
     font-weight: bold;
+    color: #fff;
+    background: #4a4035;
+    /* Tan color from prototype */
+    padding: 10px 20px;
+    border-radius: 8px;
+    width: fit-content;
 }
 
 .catchup-day {
     font-size: 16px;
     color: #ccc;
+    background: #4a4035;
+    padding: 10px 20px;
+    border-radius: 8px;
+    width: fit-content;
 }
 
 .catchup-calendar {
+    background: #4a4035;
     padding: 10px;
-    background: #2a2a2a;
     border-radius: 8px;
-    text-align: center;
     color: #fff;
     font-size: 14px;
+    text-align: left;
+}
+
+.calendar-container {
+    display: flex;
+    flex-direction: column;
 }
 
 .calendar-header {
@@ -1880,24 +1891,27 @@ service cloud.firestore {
 .calendar-days-of-week {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
+    gap: 2px;
     margin-bottom: 5px;
 }
 
 .calendar-day-of-week {
-    color: #aaa;
     font-size: 12px;
+    color: #ccc;
+    text-align: center;
 }
 
-.calendar-days {
+.calendar-week {
     display: grid;
     grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
+    gap: 2px;
+    margin-bottom: 2px;
 }
 
 .calendar-day {
     padding: 5px;
     text-align: center;
+    font-size: 12px;
 }
 
 .calendar-day.empty {
@@ -1913,6 +1927,15 @@ service cloud.firestore {
 
 .catchup-weather {
     font-size: 16px;
+    background: #2a2a2a;
+    padding: 10px 15px;
+    border-radius: 8px;
+}
+
+.catchup-tasks {
+    background: #2a2a2a;
+    padding: 10px 15px;
+    border-radius: 8px;
 }
 
 .catchup-tasks h3 {
@@ -1950,4 +1973,33 @@ service cloud.firestore {
 .priority-medium {
     color: yellow;
     margin-left: 5px;
+}
+
+/* Selection mode styling for the canvas */
+.canvas.selection-mode {
+    background: rgba(0, 0, 0, 0.845);
+    /* Light blue tint to indicate selection mode */
+    cursor: crosshair;
+}
+
+/* Wrapper for elements to apply selection styling */
+.element-wrapper {
+    position: absolute;
+    /* Ensure elements are positioned absolutely for correct bounding box */
+}
+
+/* Styling for selected elements */
+.element-wrapper.selected {
+    border: 2px solid #ffffff;
+    /* Orange border for selected elements */
+    box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+/* Selection rectangle styling */
+.selection-rectangle {
+    position: absolute;
+    border: 2px dashed #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    /* Allow mouse events to pass through */
 }
